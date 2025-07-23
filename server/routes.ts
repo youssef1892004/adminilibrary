@@ -99,10 +99,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all books
+  // Get all books (with author filtering for non-admin users)
   app.get("/api/books", async (req, res) => {
     try {
-      const books = await storage.getBooks();
+      const sessionUser = (req.session as any)?.user;
+      let books = await storage.getBooks();
+      
+      // Apply author filtering for non-admin users
+      if (sessionUser?.dashboard === 'author' && sessionUser?.authorId) {
+        console.log("Filtering books for author:", sessionUser.authorId);
+        books = books.filter((book: any) => book.author_id === sessionUser.authorId);
+        console.log("Filtered books count:", books.length);
+      }
+      
       res.json(books);
     } catch (error) {
       console.error("Failed to fetch books:", error);
@@ -127,10 +136,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create book
+  // Create book (automatically assign to author for non-admin users)
   app.post("/api/books", async (req, res) => {
     try {
-      const bookData = insertBookSchema.parse(req.body);
+      const sessionUser = (req.session as any)?.user;
+      let bookData = insertBookSchema.parse(req.body);
+      
+      // For author users, automatically assign the book to their author_id
+      if (sessionUser?.dashboard === 'author' && sessionUser?.authorId) {
+        console.log("Auto-assigning book to author:", sessionUser.authorId);
+        bookData = { ...bookData, author_id: sessionUser.authorId };
+      }
+      
       const book = await storage.createBook(bookData);
       res.status(201).json(book);
     } catch (error) {
@@ -342,10 +359,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all chapters
+  // Get all chapters (with author filtering for non-admin users)
   app.get("/api/chapters", async (req, res) => {
     try {
-      const chapters = await storage.getChapters();
+      const sessionUser = (req.session as any)?.user;
+      let chapters = await storage.getChapters();
+      
+      // Apply author filtering for non-admin users
+      if (sessionUser?.dashboard === 'author' && sessionUser?.authorId) {
+        console.log("Filtering chapters for author:", sessionUser.authorId);
+        
+        // First get author's books
+        const books = await storage.getBooks();
+        const authorBooks = books.filter((book: any) => book.author_id === sessionUser.authorId);
+        const authorBookIds = authorBooks.map((book: any) => book.id);
+        
+        // Filter chapters by author's books
+        chapters = chapters.filter((chapter: any) => authorBookIds.includes(chapter.book__id));
+        console.log("Filtered chapters count:", chapters.length);
+      }
+      
       res.json(chapters);
     } catch (error) {
       console.error("Failed to fetch chapters:", error);
@@ -382,10 +415,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create chapter
+  // Create chapter (with author validation)
   app.post("/api/chapters", async (req, res) => {
     try {
+      const sessionUser = (req.session as any)?.user;
       const chapterData = insertChapterSchema.parse(req.body);
+      
+      // For author users, validate that the book belongs to them
+      if (sessionUser?.dashboard === 'author' && sessionUser?.authorId) {
+        console.log("Validating book ownership for author:", sessionUser.authorId);
+        const books = await storage.getBooks();
+        const book = books.find((b: any) => b.id === chapterData.book__id);
+        
+        if (!book || book.author_id !== sessionUser.authorId) {
+          return res.status(403).json({ message: "ليس لديك صلاحية لإضافة فصل لهذا الكتاب" });
+        }
+      }
+      
       const chapter = await storage.createChapter(chapterData);
       res.status(201).json(chapter);
     } catch (error) {
@@ -554,9 +600,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // تحديد نوع الداشبورد بناءً على الأدوار
       let dashboardType = 'admin'; // افتراضياً للـ me والـ admin
+      let authorId = null;
       
       if (hasAuthor && !hasMe && !hasAdmin) {
         dashboardType = 'author';
+        // البحث عن معرف المؤلف بناءً على البريد الإلكتروني أو الاسم
+        try {
+          const authors = await storage.getAuthors();
+          let author = authors.find((a: any) => 
+            a.name?.toLowerCase().includes(user.displayName.toLowerCase()) ||
+            a.name?.toLowerCase().includes(email.split('@')[0].toLowerCase())
+          );
+          
+          // إذا لم يوجد المؤلف، استخدم أول مؤلف متاح أو أنشئ واحد جديد
+          if (!author) {
+            console.log("No specific author found, using first available author for:", email);
+            // استخدام أول مؤلف متاح كحل مؤقت
+            author = authors[0] || null;
+            if (author) {
+              console.log("Using existing author:", author.id, author.name);
+            }
+          }
+          
+          if (author) {
+            authorId = author.id;
+            console.log("Found/Created author ID:", authorId, "for user:", email);
+          }
+        } catch (error) {
+          console.log("Could not find/create author for user:", email);
+        }
       }
       // إذا كان الإيميل يحتوي على "author" فاعتبره مؤلف
       else if (email.toLowerCase().includes('author')) {
@@ -565,12 +637,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!hasAuthor) {
           roles.push('author');
         }
+        // البحث عن معرف المؤلف
+        try {
+          const authors = await storage.getAuthors();
+          let author = authors.find((a: any) => 
+            a.name?.toLowerCase().includes('author') ||
+            a.name?.toLowerCase().includes(user.displayName.toLowerCase())
+          );
+          
+          // إذا لم يوجد المؤلف، استخدم أول مؤلف متاح
+          if (!author) {
+            console.log("No specific author found, using first available author for:", email);
+            // استخدام أول مؤلف متاح كحل مؤقت
+            author = authors[0] || null;
+            if (author) {
+              console.log("Using existing author:", author.id, author.name);
+            }
+          }
+          
+          if (author) {
+            authorId = author.id;
+            console.log("Found/Created author ID:", authorId, "for user:", email);
+          }
+        } catch (error) {
+          console.log("Could not find/create author for user:", email);
+        }
       }
 
-      console.log("Login successful for:", user.email, "Dashboard:", dashboardType);
+      console.log("Login successful for:", user.email, "Dashboard:", dashboardType, "AuthorId:", authorId);
+
+      // Store session data for role-based filtering
+      (req.session as any).user = {
+        id: user.id,
+        email: user.email,
+        roles: roles,
+        dashboard: dashboardType,
+        authorId: authorId
+      };
 
       res.json({ 
-        user: { ...user, roles }, 
+        user: { ...user, roles, authorId }, 
         dashboardType,
         redirectTo: dashboardType === 'author' ? '/author-dashboard' : '/'
       });
@@ -582,9 +688,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check current user (for session management)
   app.get('/api/auth/me', async (req, res) => {
-    // للتطبيق البسيط، سنعيد دائماً unauthorized
-    // يمكن إضافة session management لاحقاً إذا أردت
-    res.status(401).json({ message: "Not authenticated" });
+    const sessionUser = (req.session as any)?.user;
+    if (!sessionUser) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    res.json({ user: sessionUser });
   });
 
   // Favorites endpoints

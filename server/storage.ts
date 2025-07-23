@@ -492,15 +492,18 @@ class GraphQLStorage implements IStorage {
           id
           name
           bio
-          birth_date
-          nationality
+          book_num
         }
       }
     `;
 
     try {
       const data = await graphqlRequest(mutation, { author });
-      return data.insert_libaray_Autor_one;
+      return {
+        ...data.insert_libaray_Autor_one,
+        birth_date: null,
+        nationality: null
+      };
     } catch (error) {
       console.error("GraphQL error creating author:", error);
       throw error;

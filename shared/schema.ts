@@ -61,6 +61,7 @@ export const authors = pgTable("libaray_Autor", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   bio: text("bio"),
+  book_num: integer("book_num").notNull().default(0),
 });
 
 // Library schema - Categories table
