@@ -1,0 +1,22 @@
+12:10:25 PM [express] GET /api/users 200 in 43ms :: [{"id":"3a70274b-298d-4c87-ab8e-463327243927","di…
+GraphQL error getting categories: Error: GraphQL errors: [{"message":"field 'description' not found in type: 'libaray_Category'","extensions":{"path":"$.selectionSet.libaray_Category.selectionSet.description","code":"validation-failed"}}]
+    at graphqlRequest (/home/runner/workspace/server/db.ts:22:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GraphQLStorage.getCategories (/home/runner/workspace/server/storage.ts:698:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:267:26)
+12:11:02 PM [express] GET /api/categories 200 in 112ms :: []
+12:11:02 PM [express] GET /api/authors 200 in 119ms :: [{"id":"c32ac5cd-5405-48c5-a804-86879f5ea595",…
+12:11:02 PM [express] GET /api/books 200 in 156ms :: [{"id":"7d510bf3-442e-42ea-b642-c60b5628e99d","t…
+12:11:17 PM [express] GET /api/chapters 200 in 1181ms :: [{"id":"feb81aaf-b6d1-4232-bdea-914b30a80896…
+GraphQL error deleting user: Error: GraphQL errors: [{"message":"not a valid graphql query","extensions":{"path":"$.query","code":"validation-failed"}}]
+    at graphqlRequest (/home/runner/workspace/server/db.ts:22:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GraphQLStorage.deleteUser (/home/runner/workspace/server/storage.ts:306:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:89:20)
+12:12:42 PM [express] DELETE /api/users/7a182a6e-7419-4ce9-989c-fa60aa80ceff 404 in 123ms :: {"messag…
+GraphQL error deleting user: Error: GraphQL errors: [{"message":"not a valid graphql query","extensions":{"path":"$.query","code":"validation-failed"}}]
+    at graphqlRequest (/home/runner/workspace/server/db.ts:22:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GraphQLStorage.deleteUser (/home/runner/workspace/server/storage.ts:306:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:89:20)
+12:12:50 PM [express] DELETE /api/users/7a182a6e-7419-4ce9-989c-fa60aa80ceff 404 in 124ms :: {"messag…
