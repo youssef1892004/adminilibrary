@@ -19,7 +19,7 @@ export default function AuthorChapters() {
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [chapterToDelete, setChapterToDelete] = useState<any>(null);
-  const [selectedBookId, setSelectedBookId] = useState<string>("");
+  const [selectedBookId, setSelectedBookId] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -81,7 +81,7 @@ export default function AuthorChapters() {
 
   // Filter chapters based on selected book and search term
   const filteredChapters = chapters.filter((chapter: any) => {
-    const matchesBook = !selectedBookId || chapter.book__id === selectedBookId;
+    const matchesBook = !selectedBookId || selectedBookId === "all" || chapter.book__id === selectedBookId;
     const matchesSearch = !searchTerm || 
       chapter.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chapter.chapter_num?.toString().includes(searchTerm);
@@ -155,7 +155,7 @@ export default function AuthorChapters() {
                     <SelectValue placeholder="جميع الكتب" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الكتب</SelectItem>
+                    <SelectItem value="all">جميع الكتب</SelectItem>
                     {books.map((book: any) => (
                       <SelectItem key={book.id} value={book.id}>
                         {book.title}
