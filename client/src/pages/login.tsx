@@ -171,47 +171,57 @@ export default function Login({ onLogin }: LoginProps) {
           </CardHeader>
 
           <CardContent className="px-6 pb-6">
-            {/* Simple Team List */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-lg">
-                <div className="text-right">
-                  <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
-                    Abdelrahman Tony
-                  </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Developer</p>
+            {/* Single Unified Team Box */}
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="space-y-4 text-center">
+                {/* Built by Section */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Built by</p>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-6 h-6 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">AT</span>
+                    </div>
+                    <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
+                      Abdelrahman Tony
+                    </h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">CIAO Of solidpoint.ai</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Head of DevOps and Operations at ilibrary.site</p>
                 </div>
-                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">AT</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-                <div className="text-right">
-                  <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">
-                    Youssef Amr
-                  </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Frontend Head</p>
-                </div>
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">YA</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
-                <div className="text-right">
-                  <h4 className="font-bold text-purple-700 dark:text-purple-300 text-sm">
-                    Abdelsabour Ashref
-                  </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Backend Head</p>
-                </div>
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">AA</span>
+
+                <div className="w-full h-px bg-gray-200 dark:bg-gray-600"></div>
+
+                {/* Managed by Section */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Managed by</p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">YA</span>
+                      </div>
+                      <div className="text-center">
+                        <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">Youssef Amr</h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Head of Frontend at ilibrary.site</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">AA</span>
+                      </div>
+                      <div className="text-center">
+                        <h4 className="font-bold text-purple-700 dark:text-purple-300 text-sm">Abdelsabour Ashref</h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Head of Backend at ilibrary.site</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+            {/* Simple Footer */}
+            <div className="text-center pt-3">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 © 2025 iLibrary Team
               </p>
