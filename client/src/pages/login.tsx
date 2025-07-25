@@ -185,8 +185,10 @@ export default function Login({ onLogin }: LoginProps) {
                         <h4 className="font-bold text-white text-sm">Abdelrahman Tony</h4>
                       </div>
                     </div>
-                    <p className="text-xs text-blue-200">CIAO Of solidpoint.ai</p>
-                    <p className="text-xs text-blue-200">Head of DevOps and Operations at ilibrary.site</p>
+                    <div className="text-xs text-blue-200 space-y-1 mt-2">
+                      <p className="font-medium">CIAO Of solidpoint.ai</p>
+                      <p>Head of DevOps and Operations at ilibrary.site</p>
+                    </div>
                   </div>
                 </div>
 
