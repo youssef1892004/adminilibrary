@@ -160,61 +160,57 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
             </div>
 
-            {/* Team Credits Section Inside Login Box */}
+            {/* Team Credits Section Inside Login Box - Wide Layout */}
             <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 rounded-xl border border-gray-200 dark:border-gray-700">
-              <h3 className="text-center text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">فريق العمل</h3>
+              <h3 className="text-center text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">فريق العمل</h3>
               
-              <div className="space-y-3 text-center">
-                {/* Built by Section */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Built by</p>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <div className="w-5 h-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
+              {/* Wide Grid Layout */}
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Built by - Abdelrahman Tony */}
+                <div className="text-center space-y-1">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">AT</span>
                     </div>
-                    <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
-                      Abdelrahman Tony
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">CIAO Of solidpoint.ai</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Head of DevOps and Operations at ilibrary.site</p>
-                </div>
-
-                <div className="w-full h-px bg-gray-200 dark:bg-gray-600"></div>
-
-                {/* Managed by Section */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Managed by</p>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">YA</span>
-                      </div>
-                      <div className="text-center">
-                        <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">Youssef Amr</h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Head of Frontend at ilibrary.site</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">AA</span>
-                      </div>
-                      <div className="text-center">
-                        <h4 className="font-bold text-purple-700 dark:text-purple-300 text-sm">Abdelsabour Ashref</h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Head of Backend at ilibrary.site</p>
-                      </div>
+                    <div>
+                      <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-xs">Abdelrahman Tony</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Developer</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    © 2025 iLibrary Team
-                  </p>
+                {/* Managed by - Youssef Amr */}
+                <div className="text-center space-y-1">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">YA</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-blue-700 dark:text-blue-300 text-xs">Youssef Amr</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Frontend Head</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Managed by - Abdelsabour Ashref */}
+                <div className="text-center space-y-1">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">AA</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-purple-700 dark:text-purple-300 text-xs">Abdelsabour Ashref</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Backend Head</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center pt-3 mt-3 border-t border-gray-200 dark:border-gray-600">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  © 2025 iLibrary Team
+                </p>
               </div>
             </div>
           </CardContent>
