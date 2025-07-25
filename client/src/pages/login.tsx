@@ -162,71 +162,58 @@ export default function Login({ onLogin }: LoginProps) {
           </CardContent>
         </Card>
 
-        {/* Team Credits Section */}
-        <Card className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 shadow-2xl overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-emerald-500/10 to-transparent"></div>
-          
-          <CardHeader className="text-center space-y-4 relative z-10 pt-6">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+        {/* Team Credits Section - Compact Design */}
+        <Card className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 shadow-2xl">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
               فريق العمل
             </CardTitle>
-            <div className="w-12 h-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full mx-auto"></div>
           </CardHeader>
 
-          <CardContent className="px-6 pb-6 space-y-6">
-            {/* Built by Section */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3">
-                  Built by
-                </h3>
-                <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800">
-                  <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-lg mb-2">
+          <CardContent className="px-6 pb-6">
+            {/* Simple Team List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-lg">
+                <div className="text-right">
+                  <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
                     Abdelrahman Tony
                   </h4>
-                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                    <p className="font-medium">CIAO Of solidpoint.ai</p>
-                    <p className="font-medium">Head of DevOps and Operations at ilibrary.site</p>
-                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Developer</p>
+                </div>
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">AT</span>
                 </div>
               </div>
-            </div>
-
-            {/* Managed by Section */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3">
-                  Managed by
-                </h3>
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-                    <h4 className="font-bold text-blue-700 dark:text-blue-300 text-base mb-2">
-                      Youssef Amr
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                      Head of Frontend at ilibrary.site
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
-                    <h4 className="font-bold text-purple-700 dark:text-purple-300 text-base mb-2">
-                      Abdelsabour Ashref
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                      Head of Backend at ilibrary.site
-                    </p>
-                  </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
+                <div className="text-right">
+                  <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">
+                    Youssef Amr
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Frontend Head</p>
+                </div>
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">YA</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
+                <div className="text-right">
+                  <h4 className="font-bold text-purple-700 dark:text-purple-300 text-sm">
+                    Abdelsabour Ashref
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Backend Head</p>
+                </div>
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">AA</span>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                © 2025 iLibrary - نظام إدارة المكتبة الإلكترونية
+                © 2025 iLibrary Team
               </p>
             </div>
           </CardContent>
