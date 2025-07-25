@@ -1,0 +1,45 @@
+# Node modules
+node_modules
+
+# Build output
+dist
+
+# Development files
+.git
+.github
+.vscode
+.idea
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+Thumbs.db
+
+# Attached assets (images, etc.)
+attached_assets
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Cookies
+cookies.txt
+cookies_admin.txt

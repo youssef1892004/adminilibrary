@@ -1,0 +1,17 @@
+{
+  "id": "860b93f6-fbef-4b64-bfea-7be3235ee8e2",
+  "name": "ilibrary-dashboard",
+  "projectId": "bc6ee993-7ade-42a1-960a-9521e9dc28d3",
+  "ports": [
+    {
+      "expose": true,
+      "number": 5000
+    }
+  ],
+  "publicAccess": {
+    "enabled": true,
+    "domain": "auto"
+  },
+  "resourceTier": "t3",
+  "dockerFileName": "Dockerfile"
+}
