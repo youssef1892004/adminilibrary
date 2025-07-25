@@ -71,7 +71,7 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
       </div>
       
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-8 w-full max-w-6xl relative z-10">
+      <div className="flex items-center justify-center w-full max-w-2xl relative z-10">
         {/* Login Card */}
         <Card className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 shadow-2xl overflow-hidden">
           {/* Header gradient overlay */}
@@ -159,26 +159,17 @@ export default function Login({ onLogin }: LoginProps) {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Team Credits Section - Compact Design */}
-        <Card className="w-full max-w-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 shadow-2xl">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-              فريق العمل
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="px-6 pb-6">
-            {/* Single Unified Team Box */}
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="space-y-4 text-center">
+            {/* Team Credits Section Inside Login Box */}
+            <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h3 className="text-center text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">فريق العمل</h3>
+              
+              <div className="space-y-3 text-center">
                 {/* Built by Section */}
                 <div>
                   <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Built by</p>
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <div className="w-6 h-6 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">AT</span>
                     </div>
                     <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
@@ -193,11 +184,11 @@ export default function Login({ onLogin }: LoginProps) {
 
                 {/* Managed by Section */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Managed by</p>
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Managed by</p>
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">YA</span>
                       </div>
                       <div className="text-center">
@@ -207,7 +198,7 @@ export default function Login({ onLogin }: LoginProps) {
                     </div>
                     
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">AA</span>
                       </div>
                       <div className="text-center">
@@ -217,14 +208,14 @@ export default function Login({ onLogin }: LoginProps) {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Simple Footer */}
-            <div className="text-center pt-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                © 2025 iLibrary Team
-              </p>
+                {/* Footer */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    © 2025 iLibrary Team
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
