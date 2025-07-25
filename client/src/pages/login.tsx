@@ -77,29 +77,28 @@ export default function Login({ onLogin }: LoginProps) {
           {/* Header gradient overlay */}
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/10 to-transparent"></div>
           
-          <CardHeader className="text-center space-y-6 relative z-10 pt-8">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-              <BookOpen className="h-10 w-10 text-white" />
+          <CardHeader className="text-center space-y-3 relative z-10 pt-6 pb-4">
+            <div className="mx-auto w-14 h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <BookOpen className="h-7 w-7 text-white" />
             </div>
-            <div className="space-y-2">
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Ilibrary
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-300 text-base">
+              <CardDescription className="text-gray-600 dark:text-gray-300 text-sm">
                 نظام إدارة المكتبة الإلكترونية
               </CardDescription>
-              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto"></div>
             </div>
           </CardHeader>
           
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium">
+          <CardContent className="px-6 pb-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium text-sm">
                   البريد الإلكتروني
                 </Label>
                 <div className="relative group">
-                  <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 group-focus-within:text-blue-500 transition-colors" />
                   <Input
                     id="email"
                     type="email"
@@ -107,18 +106,18 @@ export default function Login({ onLogin }: LoginProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pr-12 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-12 rounded-lg transition-all duration-200"
+                    className="pr-10 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-10 rounded-lg transition-all duration-200"
                     dir="rtl"
                   />
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium text-sm">
                   كلمة المرور
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-blue-500 transition-colors" />
+                  <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 group-focus-within:text-blue-500 transition-colors" />
                   <Input
                     id="password"
                     type="password"
@@ -126,7 +125,7 @@ export default function Login({ onLogin }: LoginProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pr-12 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-12 rounded-lg transition-all duration-200"
+                    className="pr-10 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-10 rounded-lg transition-all duration-200"
                     dir="rtl"
                   />
                 </div>
@@ -135,80 +134,80 @@ export default function Login({ onLogin }: LoginProps) {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg"
+                className="w-full h-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                    <span>جاري تسجيل الدخول...</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span className="text-sm">جاري تسجيل الدخول...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-3">
-                    <LogIn className="h-5 w-5" />
-                    <span>تسجيل الدخول</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    <span className="text-sm">تسجيل الدخول</span>
                   </div>
                 )}
               </Button>
             </form>
             
-            <div className="mt-8 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-              <div className="text-center text-sm text-blue-700 dark:text-blue-300">
-                <p className="font-bold mb-2 text-lg">مرحباً بك في نظام إدارة المكتبة الإلكترونية</p>
-                <p className="text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
-                  أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى لوحة التحكم الخاصة بك
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+              <div className="text-center text-xs text-blue-700 dark:text-blue-300">
+                <p className="font-bold mb-1 text-sm">مرحباً بك في نظام إدارة المكتبة الإلكترونية</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى لوحة التحكم
                 </p>
               </div>
             </div>
 
-            {/* Team Credits Section Inside Login Box - Wide Layout */}
-            <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 rounded-xl border border-gray-200 dark:border-gray-700">
-              <h3 className="text-center text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">فريق العمل</h3>
+            {/* Team Credits Section Inside Login Box - Compact Wide Layout */}
+            <div className="mt-4 p-3 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h3 className="text-center text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">فريق العمل</h3>
               
-              {/* Wide Grid Layout */}
-              <div className="grid md:grid-cols-3 gap-4">
+              {/* Compact Grid Layout */}
+              <div className="grid grid-cols-3 gap-2">
                 {/* Built by - Abdelrahman Tony */}
-                <div className="text-center space-y-1">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">AT</span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-emerald-700 dark:text-emerald-300 text-xs">Abdelrahman Tony</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Developer</p>
+                      <h4 className="font-bold text-emerald-700 dark:text-emerald-300" style={{fontSize: '10px'}}>Abdelrahman Tony</h4>
+                      <p className="text-gray-500 dark:text-gray-400" style={{fontSize: '9px'}}>Developer</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Managed by - Youssef Amr */}
-                <div className="text-center space-y-1">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">YA</span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-blue-700 dark:text-blue-300 text-xs">Youssef Amr</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Frontend Head</p>
+                      <h4 className="font-bold text-blue-700 dark:text-blue-300" style={{fontSize: '10px'}}>Youssef Amr</h4>
+                      <p className="text-gray-500 dark:text-gray-400" style={{fontSize: '9px'}}>Frontend Head</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Managed by - Abdelsabour Ashref */}
-                <div className="text-center space-y-1">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-5 h-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">AA</span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-purple-700 dark:text-purple-300 text-xs">Abdelsabour Ashref</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Backend Head</p>
+                      <h4 className="font-bold text-purple-700 dark:text-purple-300" style={{fontSize: '10px'}}>Abdelsabour Ashref</h4>
+                      <p className="text-gray-500 dark:text-gray-400" style={{fontSize: '9px'}}>Backend Head</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="text-center pt-3 mt-3 border-t border-gray-200 dark:border-gray-600">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+              {/* Compact Footer */}
+              <div className="text-center pt-2 mt-2 border-t border-gray-200 dark:border-gray-600">
+                <p style={{fontSize: '9px'}} className="text-gray-500 dark:text-gray-400">
                   © 2025 iLibrary Team
                 </p>
               </div>
