@@ -22,6 +22,10 @@ User expects comprehensive management capabilities for all database entities.
 - Simplified footer to just "© 2025 iLibrary Team"
 - Improved mobile responsiveness with smaller padding and text sizes
 - **Updated**: Moved team credits inside login card instead of separate card for cleaner, unified interface
+- **Major Update**: Completely redesigned login page with split-screen layout (50/50) similar to modern design patterns
+- Left side contains clean login form, right side features welcome message and full team information
+- Enhanced gradient background on right side with proper contrast and readability
+- Added complete team member details including titles and affiliations as requested
 
 ## Previous Recent Changes (July 25, 2025)
 
