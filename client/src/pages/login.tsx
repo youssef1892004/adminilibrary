@@ -71,31 +71,31 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
       </div>
       
-      <div className="flex flex-col lg:flex-row w-full max-w-3xl relative z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden min-h-[400px]">
+      <div className="flex flex-col lg:flex-row w-full max-w-3xl relative z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden min-h-[450px]">
         {/* Left Side - Login Form */}
-        <div className="w-full lg:w-1/2 p-3 lg:p-4 flex flex-col justify-center">
-          <div className="max-w-xs mx-auto w-full">
-            <div className="text-center space-y-2 mb-4">
-              <div className="mx-auto w-10 h-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <BookOpen className="h-5 w-5 text-white" />
+        <div className="w-full lg:w-1/2 p-4 lg:p-5 flex flex-col justify-center">
+          <div className="max-w-sm mx-auto w-full">
+            <div className="text-center space-y-3 mb-5">
+              <div className="mx-auto w-12 h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div className="space-y-1">
-                <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   تسجيل الدخول
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300 text-xs">
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
                   أدخل بياناتك للوصول إلى حسابك
                 </p>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium text-xs">
+                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium text-sm">
                   البريد الإلكتروني
                 </Label>
                 <div className="relative group">
-                  <Mail className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 group-focus-within:text-blue-500 transition-colors" />
                   <Input
                     id="email"
                     type="email"
@@ -103,18 +103,18 @@ export default function Login({ onLogin }: LoginProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pr-8 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-8 rounded-md transition-all duration-200 text-xs"
+                    className="pr-10 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-9 rounded-lg transition-all duration-200 text-sm"
                     dir="rtl"
                   />
                 </div>
               </div>
               
               <div className="space-y-1">
-                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium text-xs">
+                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium text-sm">
                   كلمة المرور
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 group-focus-within:text-blue-500 transition-colors" />
+                  <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 group-focus-within:text-blue-500 transition-colors" />
                   <Input
                     id="password"
                     type="password"
@@ -122,7 +122,7 @@ export default function Login({ onLogin }: LoginProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pr-8 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-8 rounded-md transition-all duration-200 text-xs"
+                    className="pr-10 text-right border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 h-9 rounded-lg transition-all duration-200 text-sm"
                     dir="rtl"
                   />
                 </div>
@@ -131,16 +131,16 @@ export default function Login({ onLogin }: LoginProps) {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-medium rounded-md shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg text-xs"
+                className="w-full h-9 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg text-sm"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center gap-1">
-                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                     <span>جاري تسجيل الدخول...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-1">
-                    <LogIn className="h-3 w-3" />
+                  <div className="flex items-center justify-center gap-2">
+                    <LogIn className="h-4 w-4" />
                     <span>تسجيل الدخول</span>
                   </div>
                 )}
@@ -150,39 +150,39 @@ export default function Login({ onLogin }: LoginProps) {
         </div>
 
         {/* Right Side - Welcome Message and Team Credits */}
-        <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-3 lg:p-4 flex flex-col justify-center text-white">
-          <div className="max-w-xs mx-auto w-full text-center space-y-3">
+        <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-4 lg:p-5 flex flex-col justify-center text-white">
+          <div className="max-w-sm mx-auto w-full text-center space-y-4">
             {/* Welcome Section */}
-            <div className="space-y-1">
-              <div className="mx-auto w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
+            <div className="space-y-2">
+              <div className="mx-auto w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-lg lg:text-xl font-bold">Ilibrary</h2>
-                <p className="text-blue-100 text-xs">نظام إدارة المكتبة الإلكترونية</p>
-                <p className="text-blue-200 text-xs leading-relaxed">
+                <h2 className="text-xl lg:text-2xl font-bold">Ilibrary</h2>
+                <p className="text-blue-100 text-sm">نظام إدارة المكتبة الإلكترونية</p>
+                <p className="text-blue-200 text-sm leading-relaxed">
                   أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى لوحة التحكم
                 </p>
               </div>
             </div>
 
             {/* Team Credits Section */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="w-full h-px bg-white/20"></div>
               
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-center">فريق العمل</h3>
+              <div className="space-y-3">
+                <h3 className="text-base font-bold text-center">فريق العمل</h3>
                 
                 {/* Built by Section */}
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-blue-200">Built by</p>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-md p-2">
-                    <div className="flex items-center gap-1 mb-1">
-                      <div className="w-4 h-4 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-blue-200">Built by</p>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-5 h-5 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">AT</span>
                       </div>
                       <div className="text-left">
-                        <h4 className="font-bold text-white text-xs">Abdelrahman Tony</h4>
+                        <h4 className="font-bold text-white text-sm">Abdelrahman Tony</h4>
                         <p className="text-blue-200 text-xs">Developer</p>
                       </div>
                     </div>
@@ -192,29 +192,29 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 {/* Managed by Section */}
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-blue-200">Managed by</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-blue-200">Managed by</p>
                   
-                  <div className="space-y-1">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-md p-1">
-                      <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center">
+                  <div className="space-y-2">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-bold">YA</span>
                         </div>
                         <div className="text-left">
-                          <h4 className="font-bold text-white text-xs">Youssef Amr</h4>
+                          <h4 className="font-bold text-white text-sm">Youssef Amr</h4>
                           <p className="text-blue-200 text-xs">Head of Frontend at ilibrary.site</p>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-white/10 backdrop-blur-sm rounded-md p-1">
-                      <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-bold">AA</span>
                         </div>
                         <div className="text-left">
-                          <h4 className="font-bold text-white text-xs">Abdelsabour Ashref</h4>
+                          <h4 className="font-bold text-white text-sm">Abdelsabour Ashref</h4>
                           <p className="text-blue-200 text-xs">Head of Backend at ilibrary.site</p>
                         </div>
                       </div>
@@ -223,7 +223,7 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="pt-1 border-t border-white/20">
+                <div className="pt-2 border-t border-white/20">
                   <p className="text-xs text-blue-200">
                     © 2025 iLibrary Team
                   </p>
