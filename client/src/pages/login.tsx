@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Mail, Lock, LogIn } from "lucide-react";
+import { BookOpen, Mail, Lock, LogIn, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
@@ -179,11 +179,10 @@ export default function Login({ onLogin }: LoginProps) {
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-5 h-5 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">AT</span>
+                        <User className="text-white h-3 w-3" />
                       </div>
                       <div className="text-left">
                         <h4 className="font-bold text-white text-sm">Abdelrahman Tony</h4>
-                        <p className="text-blue-200 text-xs">Developer</p>
                       </div>
                     </div>
                     <p className="text-xs text-blue-200">CIAO Of solidpoint.ai</p>
@@ -199,7 +198,7 @@ export default function Login({ onLogin }: LoginProps) {
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">YA</span>
+                          <User className="text-white h-3 w-3" />
                         </div>
                         <div className="text-left">
                           <h4 className="font-bold text-white text-sm">Youssef Amr</h4>
@@ -211,7 +210,7 @@ export default function Login({ onLogin }: LoginProps) {
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">AA</span>
+                          <User className="text-white h-3 w-3" />
                         </div>
                         <div className="text-left">
                           <h4 className="font-bold text-white text-sm">Abdelsabour Ashref</h4>
