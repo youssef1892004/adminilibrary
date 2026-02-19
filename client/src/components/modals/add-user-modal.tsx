@@ -45,11 +45,12 @@ export default function AddUserModal({ open, onClose }: AddUserModalProps) {
       emailVerified: false,
       disabled: false,
       locale: "en",
+      password: "",
     },
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (data: CreateUserData) => 
+    mutationFn: (data: CreateUserData) =>
       apiRequest("/api/users", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -75,7 +76,7 @@ export default function AddUserModal({ open, onClose }: AddUserModalProps) {
       ...data,
       phoneNumber: data.phoneNumber?.trim() || undefined
     } as CreateUserData;
-    
+
     createUserMutation.mutate(cleanedData);
   };
 
@@ -85,7 +86,7 @@ export default function AddUserModal({ open, onClose }: AddUserModalProps) {
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -110,6 +111,20 @@ export default function AddUserModal({ open, onClose }: AddUserModalProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="Enter email address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Enter password (optional)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,8 +232,8 @@ export default function AddUserModal({ open, onClose }: AddUserModalProps) {
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1"
                 disabled={createUserMutation.isPending}
               >

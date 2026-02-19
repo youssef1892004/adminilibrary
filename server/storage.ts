@@ -1,18 +1,18 @@
 import { graphqlRequest } from "./db";
-import { 
-  Author, 
-  Book, 
-  Category, 
+import {
+  Author,
+  Book,
+  Category,
   User,
   Chapter,
-  InsertAuthor, 
-  InsertBook, 
-  InsertCategory, 
+  InsertAuthor,
+  InsertBook,
+  InsertCategory,
   InsertUser,
   InsertChapter,
-  UpdateAuthor, 
-  UpdateBook, 
-  UpdateCategory, 
+  UpdateAuthor,
+  UpdateBook,
+  UpdateCategory,
   UpdateUser,
   UpdateChapter,
   UpsertUser
@@ -50,7 +50,7 @@ export interface IStorage {
   deleteCategory(id: string): Promise<Category | undefined>;
 
   // Chapters
-  getChapters(bookIds?: string[]): Promise<Chapter[]>;
+  getChapters(bookIds?: string[], options?: { page?: number; limit?: number; search?: string }): Promise<{ chapters: Chapter[], total: number }>;
   getChaptersByBook(bookId: string): Promise<Chapter[]>;
   getChapter(id: string): Promise<Chapter | undefined>;
   createChapter(chapter: InsertChapter): Promise<Chapter>;
@@ -65,7 +65,7 @@ export interface IStorage {
     totalCategories: number;
     totalChapters: number;
   }>;
-  
+
   // Auth methods
   getUserRoles(userId: string): Promise<string[]>;
   getAuthRoles(): Promise<string[]>;
@@ -110,12 +110,12 @@ class GraphQLStorage implements IStorage {
       console.log("Making GraphQL request for users...");
       const data = await graphqlRequest(query);
       console.log("GraphQL response for users:", JSON.stringify(data, null, 2));
-      
+
       if (!data || !data.users) {
         console.log("No users data returned from GraphQL");
         return [];
       }
-      
+
       const users = data.users.map((user: any) => ({
         id: user.id,
         displayName: user.displayName,
@@ -126,12 +126,14 @@ class GraphQLStorage implements IStorage {
         defaultRole: user.defaultRole,
         isAnonymous: user.isAnonymous,
         lastSeen: user.lastSeen,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
         locale: user.locale,
         metadata: user.metadata,
         avatarUrl: user.avatarUrl,
         passwordHash: user.passwordHash // Include passwordHash for authentication
       }));
-      
+
       console.log("Processed users:", users.map((u: any) => ({ id: u.id, email: u.email, displayName: u.displayName })));
       return users;
     } catch (error) {
@@ -143,7 +145,7 @@ class GraphQLStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const query = `
       query GetUser($id: uuid!) {
-        libaray_users_by_pk(id: $id) {
+        users(where: {id: {_eq: $id}}, limit: 1) {
           id
           displayName
           email
@@ -156,13 +158,17 @@ class GraphQLStorage implements IStorage {
           locale
           metadata
           avatarUrl
+          passwordHash
+          createdAt
+          updatedAt
         }
       }
     `;
 
     try {
       const data = await graphqlRequest(query, { id });
-      return data.libaray_users_by_pk;
+      if (!data.users || data.users.length === 0) return undefined;
+      return data.users[0];
     } catch (error) {
       console.error("GraphQL error getting user:", error);
       return undefined;
@@ -175,7 +181,10 @@ class GraphQLStorage implements IStorage {
       ...user,
       phoneNumber: user.phoneNumber?.trim() || null
     };
-    
+
+    // Ensure virtual password field is removed
+    delete (cleanUser as any).password;
+
     const mutation = `
       mutation insertUser($object: users_insert_input!) {
         insertUser(object: $object) {
@@ -225,7 +234,10 @@ class GraphQLStorage implements IStorage {
       ...user,
       phoneNumber: user.phoneNumber?.trim() || null
     };
-    
+
+    // Ensure virtual password field is removed
+    delete (cleanUser as any).password;
+
     const mutation = `
       mutation updateUser($id: uuid!, $object: users_set_input!) {
         updateUser(pk_columns: {id: $id}, _set: $object) {
@@ -354,7 +366,7 @@ class GraphQLStorage implements IStorage {
       if (existingUser) {
         return existingUser;
       }
-      
+
       // إرجاع مستخدم افتراضي للآن
       return {
         id: userData.id || "default-user",
@@ -584,7 +596,7 @@ class GraphQLStorage implements IStorage {
         name: author.name,
         Category_Id: author.Category_Id || null
       };
-      
+
       const data = await graphqlRequest(mutation, variables);
       if (data.update_libaray_Autor_by_pk) {
         return {
@@ -719,7 +731,7 @@ class GraphQLStorage implements IStorage {
       chapter_num: book.chapter_num || book.parts_num || null,
       ISBN: book.ISBN ? (typeof book.ISBN === 'string' ? parseInt(book.ISBN) : book.ISBN) : null,
       total_pages: book.total_pages || null,
-      coverImage: book.coverImage || book.cover_URL || null,
+      coverImage: book.coverImage || book.cover_URL || "",
       description: book.description || null,
       title: book.title || null,
       author_id: book.author_id || null,
@@ -729,7 +741,7 @@ class GraphQLStorage implements IStorage {
     try {
       const data = await graphqlRequest(mutation, variables);
       const newBook = data.insert_libaray_Book.returning[0];
-      
+
       return {
         id: newBook.id,
         title: newBook.title,
@@ -781,7 +793,7 @@ class GraphQLStorage implements IStorage {
     try {
       const data = await graphqlRequest(mutation, variables);
       const updatedBook = data.update_libaray_Book_by_pk;
-      
+
       return {
         id: updatedBook.id,
         title: updatedBook.title,
@@ -928,60 +940,70 @@ class GraphQLStorage implements IStorage {
   }
 
   // Chapter management - from GraphQL
-  async getChapters(bookIds?: string[]): Promise<Chapter[]> {
-    // إذا تم تمرير book IDs، فلتر الفصول حسب هذه الكتب
-    let query = `
-      query GetChapter {
-        libaray_Chapter {
-          chapter_num
-          content
-          title
-          Create_at
-          book__id
+  async getChapters(bookIds?: string[], options?: { page?: number; limit?: number; search?: string }): Promise<{ chapters: Chapter[], total: number }> {
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+    const offset = (page - 1) * limit;
+    const search = options?.search || "";
+
+    const whereClause: any = {};
+    if (bookIds && bookIds.length > 0) {
+      whereClause.book__id = { _in: bookIds };
+    } else {
+      // If no bookIds provided, we want all chapters
+      // The previous logic was implicitly getting all chapters if bookIds was empty
+    }
+
+    if (search) {
+      whereClause.title = { _ilike: `%${search}%` };
+    }
+
+    const query = `
+      query GetChapters($limit: Int, $offset: Int, $where: libaray_Chapter_bool_exp) {
+        libaray_Chapter(limit: $limit, offset: $offset, where: $where, order_by: {chapter_num: asc}) {
           id
+          title
+          content
+          chapter_num
+          book__id
+          Create_at
+        }
+        libaray_Chapter_aggregate(where: $where) {
+          aggregate {
+            count
+          }
         }
       }
     `;
 
-    // إذا تم تمرير bookIds، استخدم فلترة في GraphQL
-    if (bookIds && bookIds.length > 0) {
-      query = `
-        query GetChaptersByBooks($bookIds: [uuid!]!) {
-          libaray_Chapter(where: {book__id: {_in: $bookIds}}) {
-            chapter_num
-            content
-            title
-            Create_at
-            book__id
-            id
-          }
-        }
-      `;
-    }
-
     try {
-      const variables = bookIds && bookIds.length > 0 ? { bookIds } : undefined;
+      const variables = {
+        limit,
+        offset,
+        where: whereClause
+      };
+
       const data = await graphqlRequest(query, variables);
-      console.log("Raw GraphQL chapters response:", data);
-      
-      if (!data.libaray_Chapter) {
-        console.log("No libaray_Chapter in response, trying different structure");
-        return [];
-      }
-      
-      return data.libaray_Chapter.map((chapter: any) => ({
-        id: chapter.id,
-        title: chapter.title,
-        content: chapter.content,
-        chapter_num: chapter.chapter_num,
-        book_id: chapter.book__id,
-        Create_at: chapter.Create_at
-      }));
+
+      // Handle case where aggregate might be missing or different structure
+      const total = data.libaray_Chapter_aggregate?.aggregate?.count || 0;
+      const chapters = data.libaray_Chapter || [];
+
+      return {
+        chapters: chapters.map((chapter: any) => ({
+          id: chapter.id,
+          title: chapter.title,
+          content: chapter.content,
+          chapter_num: chapter.chapter_num,
+          book_id: chapter.book__id,
+          Create_at: chapter.Create_at
+        })),
+        total
+      };
     } catch (error) {
       console.error("GraphQL error getting chapters:", error);
       console.error("Full error details:", JSON.stringify(error, null, 2));
-      
-      return [];
+      return { chapters: [], total: 0 };
     }
   }
 
@@ -1056,7 +1078,7 @@ class GraphQLStorage implements IStorage {
     try {
       const data = await graphqlRequest(mutation, variables);
       const newChapter = data.insert_libaray_Chapter.returning[0];
-      
+
       return {
         id: newChapter.id,
         title: newChapter.title,
@@ -1100,7 +1122,7 @@ class GraphQLStorage implements IStorage {
     try {
       const data = await graphqlRequest(mutation, variables);
       const updatedChapter = data.update_libaray_Chapter_by_pk;
-      
+
       return {
         id: updatedChapter.id,
         title: updatedChapter.title,

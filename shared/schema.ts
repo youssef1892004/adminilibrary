@@ -92,7 +92,7 @@ export const books = pgTable("libaray_Book", {
 export const chapters = pgTable("libaray_Chapter", {
   id: uuid("id").primaryKey(),
   title: text("title").notNull(),
-  content: text("content"),
+  content: jsonb("content"),
   chapter_num: integer("chapter_num").notNull(),
   book_id: uuid("book_id").notNull(),
   Create_at: text("Create_at"),
@@ -226,6 +226,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   emailVerified: z.boolean().default(false),
   disabled: z.boolean().default(false),
   locale: z.enum(["en", "ar", "fr"]).default("en"),
+  password: z.string().optional(),
 });
 
 export const updateUserSchema = insertUserSchema.partial();

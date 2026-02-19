@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,7 @@ interface EditBookModalProps {
 export default function EditBookModal({ open, onClose, book, authors, categories }: EditBookModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
 
   const form = useForm<UpdateBook>({
     resolver: zodResolver(updateBookSchema),
@@ -154,7 +155,7 @@ export default function EditBookModal({ open, onClose, book, authors, categories
                 <FormItem>
                   <FormLabel>وصف الكتاب</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="أدخل وصف الكتاب"
                       className="min-h-[100px]"
                       {...field}
@@ -170,13 +171,58 @@ export default function EditBookModal({ open, onClose, book, authors, categories
               name="cover_URL"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>رابط غلاف الكتاب</FormLabel>
+                  <FormLabel>غلاف الكتاب</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="https://example.com/cover.jpg"
-                      type="url"
-                      {...field}
-                    />
+                    <div className="space-y-4">
+                      {/* Image Preview */}
+                      {field.value && (
+                        <div className="relative w-32 h-44 rounded-lg overflow-hidden border border-slate-200 shadow-sm mx-auto">
+                          <img
+                            src={field.value}
+                            alt="Cover preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              setUploading(true);
+                              const formData = new FormData();
+                              formData.append("cover", file);
+
+                              try {
+                                const res = await fetch("/api/upload", {
+                                  method: "POST",
+                                  body: formData,
+                                });
+
+                                if (!res.ok) throw new Error("فشل رفع الصورة");
+
+                                const data = await res.json();
+                                form.setValue("cover_URL", data.url);
+                                toast({ title: "تم رفع الصورة بنجاح" });
+                              } catch (err) {
+                                toast({ title: "فشل رفع الصورة", variant: "destructive" });
+                              } finally {
+                                setUploading(false);
+                              }
+                            }}
+                            disabled={uploading}
+                            className="cursor-pointer file:cursor-pointer file:text-blue-600 file:font-medium"
+                          />
+                          {uploading && <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>}
+                        </div>
+
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -257,7 +303,7 @@ export default function EditBookModal({ open, onClose, book, authors, categories
                   <FormItem>
                     <FormLabel>عدد الأجزاء</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="number"
                         min="1"
                         {...field}
@@ -276,7 +322,7 @@ export default function EditBookModal({ open, onClose, book, authors, categories
                   <FormItem>
                     <FormLabel>عدد الصفحات</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="number"
                         min="1"
                         {...field}

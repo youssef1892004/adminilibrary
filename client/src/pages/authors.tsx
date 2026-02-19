@@ -22,6 +22,10 @@ export default function Authors() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -77,6 +81,12 @@ export default function Authors() {
     (author.bio && author.bio.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const totalPages = Math.ceil(filteredAuthors.length / itemsPerPage);
+  const paginatedAuthors = filteredAuthors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const columns: TableColumn<any>[] = [
     {
       key: "image_url",
@@ -84,9 +94,9 @@ export default function Authors() {
       render: (value: string) => (
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
           {value ? (
-            <img 
-              src={value} 
-              alt="صورة المؤلف" 
+            <img
+              src={value}
+              alt="صورة المؤلف"
               className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
@@ -213,7 +223,7 @@ export default function Authors() {
                 <span className="ml-1 sm:hidden">شبكة</span>
               </Button>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowAddModal(true)}
               className="bg-white text-purple-600 hover:bg-purple-50 shadow-lg hover:shadow-xl rounded-xl px-4 sm:px-6 py-2 sm:py-3 font-medium transition-all duration-200 w-full sm:w-auto"
             >
@@ -241,7 +251,7 @@ export default function Authors() {
             <p className="text-purple-100 text-xs">مؤلف مسجل</p>
           </CardContent>
         </Card>
-        
+
         <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
             <CardTitle className="text-xs font-medium text-indigo-100">إجمالي الكتب</CardTitle>
@@ -326,28 +336,29 @@ export default function Authors() {
               </CardHeader>
               <CardContent className="p-0">
                 <DataTable
-                  data={filteredAuthors}
+                  data={paginatedAuthors}
                   columns={columns}
                   loading={isLoading}
                   searchPlaceholder=""
-                  onSearch={() => {}}
+                  onSearch={() => { }}
+                  hideSearch={true}
                 />
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {filteredAuthors.map((author: any) => (
-                <Card 
-                  key={author.id} 
+              {paginatedAuthors.map((author: any) => (
+                <Card
+                  key={author.id}
                   className="group hover:scale-[1.02] transition-all duration-300 border-0 shadow-lg hover:shadow-xl rounded-2xl bg-white/90 backdrop-blur-sm overflow-hidden"
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-start gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center shadow-inner">
                         {author.image_url ? (
-                          <img 
-                            src={author.image_url} 
-                            alt={author.name} 
+                          <img
+                            src={author.image_url}
+                            alt={author.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
@@ -374,7 +385,7 @@ export default function Authors() {
                       ) : (
                         <p className="text-sm text-gray-400 italic">لا توجد نبذة تعريفية</p>
                       )}
-                      
+
                       {author.Category_Id && (
                         <div className="flex items-center gap-2">
                           <FolderOpen className="h-4 w-4 text-gray-400" />
@@ -413,6 +424,33 @@ export default function Authors() {
             </div>
           )}
 
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="bg-white hover:bg-purple-50"
+              >
+                السابق
+              </Button>
+              <span className="text-sm text-gray-600 mx-2">
+                صفحة {currentPage} من {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="bg-white hover:bg-purple-50"
+              >
+                التالي
+              </Button>
+            </div>
+          )}
+
           {filteredAuthors.length === 0 && !isLoading && (
             <Card className="border-0 shadow-lg rounded-2xl bg-white/80 backdrop-blur-sm">
               <CardContent className="flex flex-col items-center justify-center py-20">
@@ -423,7 +461,7 @@ export default function Authors() {
                 <p className="text-gray-500 text-center mb-6 max-w-md">
                   {searchQuery ? "لم يتم العثور على مؤلفين مطابقين لبحثك" : "لم يتم إضافة أي مؤلفين بعد"}
                 </p>
-                <Button 
+                <Button
                   onClick={() => setShowAddModal(true)}
                   className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-3"
                 >
@@ -462,16 +500,12 @@ export default function Authors() {
 
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setSelectedAuthor(null);
-        }}
+        onOpenChange={setShowDeleteModal}
         onConfirm={handleConfirmDelete}
         title="حذف المؤلف"
-        message={`هل أنت متأكد من رغبتك في حذف المؤلف "${selectedAuthor?.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`}
+        description={`هل أنت متأكد من رغبتك في حذف المؤلف "${selectedAuthor?.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`}
         confirmText="حذف"
         cancelText="إلغاء"
-        destructive
       />
     </div>
   );

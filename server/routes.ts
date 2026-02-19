@@ -5,6 +5,8 @@ import { insertUserSchema, updateUserSchema, insertAuthorSchema, updateAuthorSch
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { GRAPHQL_ENDPOINT, ADMIN_SECRET } from "./db";
+import multer from "multer";
+import { uploadToS3, retrieveFileFromS3 } from "./s3";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard stats endpoint
@@ -34,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const user = await storage.getUser(id);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -50,7 +52,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(userData);
+
+      // Hash password if provided
+      let passwordHash: string | undefined;
+      if (userData.password) {
+        const salt = await bcrypt.genSalt(10);
+        passwordHash = await bcrypt.hash(userData.password, salt);
+      }
+
+      // Remove plain password and add passwordHash
+      const { password, ...userFields } = userData;
+      const dbUser = {
+        ...userFields,
+        passwordHash,
+      };
+
+      const user = await storage.createUser(dbUser);
       res.status(201).json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -66,8 +83,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userData = updateUserSchema.parse(req.body);
-      const user = await storage.updateUser(id, userData);
-      
+
+      // Handle password update if provided
+      let passwordHash: string | undefined;
+      if (userData.password) {
+        const salt = await bcrypt.genSalt(10);
+        passwordHash = await bcrypt.hash(userData.password, salt);
+      }
+
+      // Remove plain password and add passwordHash if it exists
+      const { password, ...userFields } = userData;
+      const dbUser = {
+        ...userFields,
+        ...(passwordHash ? { passwordHash } : {}),
+      };
+
+      const user = await storage.updateUser(id, dbUser);
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -87,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const user = await storage.deleteUser(id);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -104,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req.session as any)?.user;
       let books = await storage.getBooks();
-      
+
       // Apply author filtering for non-admin users based on user_id
       if (sessionUser?.dashboard === 'author' && sessionUser?.id) {
         console.log("Filtering books for user_id:", sessionUser.id);
@@ -117,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           books = []; // No author found, no books
         }
       }
-      
+
       res.json(books);
     } catch (error) {
       console.error("Failed to fetch books:", error);
@@ -130,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const book = await storage.getBook(id);
-      
+
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
       }
@@ -148,11 +180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionUser = (req.session as any)?.user;
       console.log("Create book request body:", JSON.stringify(req.body, null, 2));
       console.log("Session user:", JSON.stringify(sessionUser, null, 2));
-      
+
       try {
         // Validate book data using the schema
         let bookData = insertBookSchema.parse(req.body);
-        
+
         // For author users, automatically assign the book to their author_id based on user_id
         if (sessionUser?.dashboard === 'author' && sessionUser?.id) {
           console.log("Auto-assigning book to user_id:", sessionUser.id);
@@ -164,15 +196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(403).json({ message: "لم يتم العثور على بيانات المؤلف" });
           }
         }
-        
+
         console.log("Final book data to create:", JSON.stringify(bookData, null, 2));
         const book = await storage.createBook(bookData);
         res.status(201).json(book);
       } catch (validationError: any) {
         console.error("Validation error:", validationError);
         if (validationError instanceof z.ZodError) {
-          return res.status(400).json({ 
-            message: "خطأ في التحقق من البيانات", 
+          return res.status(400).json({
+            message: "خطأ في التحقق من البيانات",
             errors: validationError.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
           });
         }
@@ -184,13 +216,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File upload endpoint
+  const upload = multer({ storage: multer.memoryStorage() });
+
+  app.post("/api/upload", upload.single("cover"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const folder = (req.query.folder as string) || "books";
+      console.log("Uploading file:", req.file.originalname, "Size:", req.file.size, "MimeType:", req.file.mimetype, "Folder:", folder);
+
+      const fileUrl = await uploadToS3(req.file, folder);
+      console.log("File uploaded successfully:", fileUrl);
+      res.json({ url: fileUrl });
+    } catch (error) {
+      console.error("File upload failed:", error);
+      res.status(500).json({ message: "File upload failed" });
+    }
+  });
+
+  // Retrieve file from S3 (Proxy)
+  app.get("/api/uploads/books/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const key = `books/${filename}`;
+
+      console.log("Proxying file request for:", key);
+
+      const fileStream = await retrieveFileFromS3(key);
+
+      // Determine content type based on extension (simple check)
+      const ext = filename.split('.').pop()?.toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (ext === 'jpg' || ext === 'jpeg') contentType = 'image/jpeg';
+      else if (ext === 'png') contentType = 'image/png';
+      else if (ext === 'gif') contentType = 'image/gif';
+      else if (ext === 'webp') contentType = 'image/webp';
+
+      res.setHeader('Content-Type', contentType);
+      // Cache control for performance
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+
+      // Pipe the stream to response
+      // @ts-ignore
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Failed to retrieve file proxy:", error);
+      res.status(404).json({ message: "File not found" });
+    }
+  });
+
+  // Retrieve author file from S3 (Proxy)
+  app.get("/api/uploads/authors/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const key = `authors/${filename}`;
+
+      console.log("Proxying author file request for:", key);
+
+      const fileStream = await retrieveFileFromS3(key);
+
+      // Determine content type
+      const ext = filename.split('.').pop()?.toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (ext === 'jpg' || ext === 'jpeg') contentType = 'image/jpeg';
+      else if (ext === 'png') contentType = 'image/png';
+      else if (ext === 'gif') contentType = 'image/gif';
+      else if (ext === 'webp') contentType = 'image/webp';
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+
+      // @ts-ignore
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Failed to retrieve file proxy:", error);
+      res.status(404).json({ message: "File not found" });
+    }
+  });
+
   // Update book
   app.put("/api/books/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const bookData = updateBookSchema.parse(req.body);
       const book = await storage.updateBook(id, bookData);
-      
+
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
       }
@@ -210,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const book = await storage.deleteBook(id);
-      
+
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
       }
@@ -269,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const author = await storage.getAuthor(id);
-      
+
       if (!author) {
         return res.status(404).json({ message: "Author not found" });
       }
@@ -282,17 +395,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create author
+  // Create author (with optional user creation/linking)
   app.post("/api/authors", async (req, res) => {
     try {
-      const authorData = insertAuthorSchema.parse(req.body);
+      // Custom schema for the request body that includes mode and user details
+      const requestSchema = z.discriminatedUnion("mode", [
+        z.object({
+          mode: z.literal("new"),
+          name: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(6),
+          bio: z.string().optional(),
+          image_url: z.string().optional(),
+          book_num: z.number().optional(),
+          Category_Id: z.string().optional(),
+        }),
+        z.object({
+          mode: z.literal("existing"),
+          user_id: z.string().min(1),
+          name: z.string().min(1),
+          bio: z.string().optional(),
+          image_url: z.string().optional(),
+          book_num: z.number().optional(),
+          Category_Id: z.string().optional(),
+        }),
+      ]);
+
+      // Parse request body
+      // If it fails standard schema validation, check if it matches the enhanced schema
+      let payload;
+      try {
+        payload = requestSchema.parse(req.body);
+      } catch (e) {
+        // Fallback to standard insertAuthorSchema if mode is missing (legacy/direct API usage)
+        if (!req.body.mode) {
+          const authorData = insertAuthorSchema.parse(req.body);
+          const author = await storage.createAuthor(authorData);
+          return res.status(201).json(author);
+        }
+        throw e;
+      }
+
+      let userId: string | undefined;
+
+      if (payload.mode === "new") {
+        // Check if user exists
+        const existingUsers = await storage.getUsers();
+        const userExists = existingUsers.find(u => u.email === payload.email);
+        if (userExists) {
+          return res.status(400).json({ message: "البريد الإلكتروني مسجل مسبقاً" });
+        }
+
+        // Create new user
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(payload.password, salt);
+
+        const newUser = await storage.createUser({
+          email: payload.email,
+          displayName: payload.name, // Use author name as display name
+          passwordHash,
+          defaultRole: "author", // Set distinct role
+          emailVerified: true,
+          disabled: false,
+          locale: "ar",
+          avatarUrl: payload.image_url || "",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any);
+
+        // Handle potential array/object return structure from GraphQL
+        userId = newUser.id ||
+          (Array.isArray(newUser) && newUser[0]?.id) ||
+          ((newUser as any).returning && (newUser as any).returning[0]?.id);
+
+        if (!userId) {
+          // Last resort check if it's the insertUser wrapper itself (unlikely based on storage.ts, but safe)
+          // If storage.createUser returns data.insertUser, and if insertUser is list...
+          // Just logging for now if it fails
+          console.error("Failed to extract ID from created user:", newUser);
+        }
+      } else {
+        // Verify existing user
+        const user = await storage.getUser(payload.user_id);
+        if (!user) {
+          return res.status(404).json({ message: "المستخدم غير موجود" });
+        }
+        userId = user.id;
+
+        // Optionally update user role to author if not already? 
+        // For now, we just link them.
+      }
+
+      // Create Author linked to User
+      const authorData = {
+        name: payload.name,
+        bio: payload.bio,
+        image_url: payload.image_url,
+        book_num: payload.book_num || 0,
+        Category_Id: payload.Category_Id,
+        user_id: userId,
+      };
+
+      console.log("Creating author with data:", JSON.stringify(authorData, null, 2));
       const author = await storage.createAuthor(authorData);
       res.status(201).json(author);
-    } catch (error) {
+
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Failed to create author:", error);
-      res.status(500).json({ message: "Failed to create author" });
+      // Return full error for debugging
+      res.status(500).json({ message: "Failed to create author", error: error.message, details: error });
     }
   });
 
@@ -302,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const authorData = updateAuthorSchema.parse(req.body);
       const author = await storage.updateAuthor(id, authorData);
-      
+
       if (!author) {
         return res.status(404).json({ message: "Author not found" });
       }
@@ -322,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const author = await storage.deleteAuthor(id);
-      
+
       if (!author) {
         return res.status(404).json({ message: "Author not found" });
       }
@@ -350,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const category = await storage.getCategory(id);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -383,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const categoryData = updateCategorySchema.parse(req.body);
       const category = await storage.updateCategory(id, categoryData);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -403,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const category = await storage.deleteCategory(id);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -419,8 +633,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chapters", async (req, res) => {
     try {
       const sessionUser = (req.session as any)?.user;
-      let chapters: any[];
-      
+      let result: { chapters: any[], total: number } = { chapters: [], total: 0 };
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = (req.query.search as string) || "";
+
       // Apply author filtering for non-admin users based on user_id
       if (sessionUser?.dashboard === 'author' && sessionUser?.id) {
         console.log("Filtering chapters for user_id:", sessionUser.id);
@@ -431,19 +649,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const books = await storage.getBooks();
           const authorBooks = books.filter((book: any) => book.author_id === author.id);
           const authorBookIds = authorBooks.map((book: any) => book.id);
-          
-          // Use GraphQL filtering to get chapters only from author's books
-          chapters = await storage.getChapters(authorBookIds);
-          console.log("Filtered chapters count for author:", author.id, ":", chapters.length);
+
+          // Use GraphQL filtering + Pagination + Search
+          result = await storage.getChapters(authorBookIds, { page, limit, search });
+          console.log("Filtered chapters count for author:", author.id, ":", result.total);
         } else {
-          chapters = []; // No author found, no chapters
+          result = { chapters: [], total: 0 }; // No author found, no chapters
         }
       } else {
-        // Admin users get all chapters
-        chapters = await storage.getChapters();
+        // Admin users get all chapters with pagination
+        result = await storage.getChapters(undefined, { page, limit, search });
       }
-      
-      res.json(chapters);
+
+      res.json(result);
     } catch (error) {
       console.error("Failed to fetch chapters:", error);
       res.status(500).json({ message: "Failed to fetch chapters" });
@@ -467,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const chapter = await storage.getChapter(id);
-      
+
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
@@ -484,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req.session as any)?.user;
       const chapterData = insertChapterSchema.parse(req.body);
-      
+
       // For author users, validate that the book belongs to them based on user_id
       if (sessionUser?.dashboard === 'author' && sessionUser?.id) {
         console.log("Validating book ownership for user_id:", sessionUser.id);
@@ -492,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (author) {
           const books = await storage.getBooks();
           const book = books.find((b: any) => b.id === chapterData.book_id);
-          
+
           if (!book || book.author_id !== author.id) {
             return res.status(403).json({ message: "ليس لديك صلاحية لإضافة فصل لهذا الكتاب" });
           }
@@ -500,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ message: "لم يتم العثور على بيانات المؤلف" });
         }
       }
-      
+
       const chapter = await storage.createChapter(chapterData);
       res.status(201).json(chapter);
     } catch (error) {
@@ -518,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const chapterData = updateChapterSchema.parse(req.body);
       const chapter = await storage.updateChapter(id, chapterData);
-      
+
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
@@ -538,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const chapter = await storage.deleteChapter(id);
-      
+
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
@@ -555,20 +773,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/author/books", async (req, res) => {
     try {
       const sessionUser = (req.session as any)?.user;
-      
+
       if (!sessionUser?.id) {
         return res.status(401).json({ message: "غير مصرح لك بالوصول" });
       }
-      
+
       // Get author by user_id
       const author = await storage.getAuthorByUserId(sessionUser.id);
       if (!author) {
         return res.status(404).json({ message: "لم يتم العثور على بيانات المؤلف" });
       }
-      
+
       const books = await storage.getBooks();
       const authorBooks = books.filter((book: any) => book.author_id === author.id);
-      
+
       res.json(authorBooks);
     } catch (error) {
       console.error("Failed to fetch author books:", error);
@@ -580,32 +798,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/author/books", async (req, res) => {
     try {
       const sessionUser = (req.session as any)?.user;
-      
+
       if (!sessionUser?.id) {
         return res.status(401).json({ message: "غير مصرح لك بالوصول" });
       }
-      
+
       // Get author by user_id
       const author = await storage.getAuthorByUserId(sessionUser.id);
       if (!author) {
         return res.status(404).json({ message: "لم يتم العثور على بيانات المؤلف" });
       }
-      
+
       try {
         // Validate and prepare book data
         let bookData = insertBookSchema.parse(req.body);
-        
+
         // Automatically assign the book to this author
         bookData = { ...bookData, author_id: author.id };
-        
+
         console.log("Creating book for author:", author.id, "data:", JSON.stringify(bookData, null, 2));
         const book = await storage.createBook(bookData);
         res.status(201).json(book);
       } catch (validationError: any) {
         console.error("Validation error:", validationError);
         if (validationError instanceof z.ZodError) {
-          return res.status(400).json({ 
-            message: "خطأ في التحقق من البيانات", 
+          return res.status(400).json({
+            message: "خطأ في التحقق من البيانات",
             errors: validationError.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
           });
         }
@@ -622,31 +840,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req.session as any)?.user;
       const { id } = req.params;
-      
+
       if (!sessionUser?.id) {
         return res.status(401).json({ message: "غير مصرح لك بالوصول" });
       }
-      
+
       // Get author by user_id
       const author = await storage.getAuthorByUserId(sessionUser.id);
       if (!author) {
         return res.status(404).json({ message: "لم يتم العثور على بيانات المؤلف" });
       }
-      
+
       // Check if book belongs to this author
       const existingBook = await storage.getBook(id);
       if (!existingBook || existingBook.author_id !== author.id) {
         return res.status(403).json({ message: "غير مصرح لك بتعديل هذا الكتاب" });
       }
-      
+
       try {
         const bookData = updateBookSchema.parse(req.body);
         const book = await storage.updateBook(id, bookData);
         res.json(book);
       } catch (validationError: any) {
         if (validationError instanceof z.ZodError) {
-          return res.status(400).json({ 
-            message: "خطأ في التحقق من البيانات", 
+          return res.status(400).json({
+            message: "خطأ في التحقق من البيانات",
             errors: validationError.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
           });
         }
@@ -663,23 +881,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req.session as any)?.user;
       const { id } = req.params;
-      
+
       if (!sessionUser?.id) {
         return res.status(401).json({ message: "غير مصرح لك بالوصول" });
       }
-      
+
       // Get author by user_id
       const author = await storage.getAuthorByUserId(sessionUser.id);
       if (!author) {
         return res.status(404).json({ message: "لم يتم العثور على بيانات المؤلف" });
       }
-      
+
       // Check if book belongs to this author
       const existingBook = await storage.getBook(id);
       if (!existingBook || existingBook.author_id !== author.id) {
         return res.status(403).json({ message: "غير مصرح لك بحذف هذا الكتاب" });
       }
-      
+
       const book = await storage.deleteBook(id);
       res.json({ message: "تم حذف الكتاب بنجاح" });
     } catch (error: any) {
@@ -692,7 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/setup-test-users', async (req, res) => {
     try {
       const testPasswordHash = "$2b$10$CFgLxI6GM6cSeG425nbpHevskoLaVPCVIyXQXbxv7jusL2GG6Ql0m"; // hash for "123456"
-      
+
       // Update test users with password hash
       const updateQuery = `
         mutation updateTestUsers($passwordHash: String!) {
@@ -717,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const response = await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-hasura-admin-secret': ADMIN_SECRET
         },
@@ -730,8 +948,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await response.json();
       console.log("Test users setup result:", data);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Test users updated with encrypted passwords",
         updated: data.data?.update_auth_users?.affected_rows || 0
       });
@@ -746,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
       console.log("Login attempt for email:", email);
-      
+
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
@@ -755,7 +973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsers();
       console.log("Found users count:", users.length);
       const user = users.find(u => u.email === email);
-      
+
       if (!user) {
         console.log("User not found with email:", email);
         return res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
@@ -765,7 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // التحقق من كلمة المرور - مؤقتاً نسمح لأي مستخدم بكلمة مرور testpass123
       let isPasswordValid = false;
-      
+
       if (password === "testpass123") {
         isPasswordValid = true;
         console.log("Using default test password for:", email);
@@ -791,28 +1009,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roles = ['admin']; // دور افتراضي
       }
       console.log("User roles:", roles);
-      
+
       // التحقق من صلاحيات المستخدم والتحديد
       const hasMe = roles.includes('me');
       const hasAdmin = roles.includes('admin');
       const hasAuthor = roles.includes('author');
       const hasUser = roles.includes('user');
       const hasAnonymous = roles.includes('anonymous');
-      
+
       // منع دخول المستخدمين العاديين والمجهولين
       if ((hasUser && !hasMe && !hasAdmin && !hasAuthor) || hasAnonymous) {
         console.log("Access denied for user with roles:", roles);
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "غير مصرح لك بالدخول - ليس لديك صلاحيات كافية",
-          accessDenied: true 
+          accessDenied: true
         });
       }
-      
+
       // Helper function to ensure unique author assignment
       const ensureAuthorForUser = async (userId: string, userEmail: string, displayName: string): Promise<string | null> => {
         try {
           let author = await storage.getAuthorByUserId(userId);
-          
+
           if (!author) {
             console.log("Creating new author for user_id:", userId);
             const newAuthor = await storage.createAuthor({
@@ -828,7 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             console.log("Found existing author:", author.id, "for user_id:", userId);
           }
-          
+
           // Verify the author belongs to this user
           if (author && author.user_id === userId) {
             console.log("Verified author ownership:", author.id, "for user_id:", userId);
@@ -846,7 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديد نوع الداشبورد بناءً على الأدوار
       let dashboardType = 'admin'; // افتراضياً للـ me والـ admin
       let authorId = null;
-      
+
       if (hasAuthor && !hasMe && !hasAdmin) {
         dashboardType = 'author';
         authorId = await ensureAuthorForUser(user.id, user.email, user.displayName);
@@ -871,11 +1089,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dashboard: dashboardType,
         authorId: authorId
       };
-      
+
       console.log("Session user stored:", JSON.stringify((req.session as any).user, null, 2));
 
-      res.json({ 
-        user: { ...user, roles, authorId }, 
+      res.json({
+        user: { ...user, roles, authorId },
         dashboardType,
         redirectTo: dashboardType === 'author' ? '/author-dashboard' : '/',
         clearCache: true // إشارة لـ frontend لمسح الـ cache
@@ -901,7 +1119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!sessionUser) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     res.json({ user: sessionUser });
   });
 
@@ -910,12 +1128,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req.session as any)?.user;
       console.log("Author profile request - session user:", JSON.stringify(sessionUser, null, 2));
-      
+
       if (!sessionUser) {
         console.log("No session user found");
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       if (sessionUser.dashboard !== 'author') {
         console.log("User dashboard is not 'author':", sessionUser.dashboard);
         return res.status(403).json({ message: "Access denied - Authors only" });
@@ -951,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updateData = req.body;
       const updatedAuthor = await storage.updateAuthor(author.id, updateData);
-      
+
       if (!updatedAuthor) {
         return res.status(404).json({ message: "Failed to update author profile" });
       }
@@ -990,12 +1208,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userData = req.body;
-      
+
       const updatedUser = await storage.updateUser(id, {
         ...userData,
         id: id,
       });
-      
+
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);

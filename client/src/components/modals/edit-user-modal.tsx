@@ -33,6 +33,7 @@ interface EditUserModalProps {
 interface UpdateUserData {
   displayName: string;
   email: string;
+  password?: string;
   phoneNumber?: string;
   defaultRole: string;
   emailVerified: boolean;
@@ -47,6 +48,7 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
     defaultValues: {
       displayName: "",
       email: "",
+      password: "",
       phoneNumber: "",
       defaultRole: "user",
       emailVerified: false,
@@ -60,6 +62,7 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
       form.reset({
         displayName: user.displayName,
         email: user.email,
+        password: "", // Always empty for security
         phoneNumber: user.phoneNumber || "",
         defaultRole: user.defaultRole || "user",
         emailVerified: user.emailVerified,
@@ -70,7 +73,7 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
   }, [user, form]);
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserData }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserData }) =>
       apiRequest(`/api/users/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -91,13 +94,13 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
 
   const onSubmit = (data: UpdateUserData) => {
     if (!user) return;
-    
+
     // إصلاح مشكلة phoneNumber - إذا كان فارغًا، يجب أن يكون null
     const cleanedData = {
       ...data,
       phoneNumber: data.phoneNumber?.trim() || undefined
     } as UpdateUserData;
-    
+
     updateUserMutation.mutate({ id: user.id, data: cleanedData });
   };
 
@@ -109,7 +112,7 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
         <DialogHeader>
           <DialogTitle>تعديل المستخدم</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -134,6 +137,20 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
                   <FormLabel>البريد الإلكتروني</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="أدخل البريد الإلكتروني" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>كلمة المرور الجديدة (اختياري)</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="اتركه فارغاً للاحتفاظ بكلمة المرور الحالية" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -241,8 +258,8 @@ export default function EditUserModal({ open, onClose, user }: EditUserModalProp
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 إلغاء
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1"
                 disabled={updateUserMutation.isPending}
               >

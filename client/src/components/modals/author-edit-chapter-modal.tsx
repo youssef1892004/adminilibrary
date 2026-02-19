@@ -64,7 +64,7 @@ export function AuthorEditChapterModal({ isOpen, onClose, onSubmit, chapter, boo
     if (chapter) {
       form.reset({
         title: chapter.title,
-        content: Array.isArray(chapter.content) ? chapter.content.join('\n') : chapter.content || "",
+        content: Array.isArray(chapter.content) ? (chapter.content as any[]).join('\n') : (typeof chapter.content === 'string' ? chapter.content : "") || "",
         chapter_num: chapter.chapter_num,
         book__id: chapter.book_id, // Convert from book_id to book__id for author display
       });

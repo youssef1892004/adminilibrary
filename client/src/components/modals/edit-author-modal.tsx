@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const editAuthorSchema = z.object({
   name: z.string().min(1, "اسم المؤلف مطلوب"),
   bio: z.string().optional(),
-  image_url: z.string().url("رابط صورة غير صحيح").optional().or(z.literal("")),
+  image_url: z.string().optional().or(z.literal("")),
   book_num: z.number().min(0, "عدد الكتب يجب أن يكون 0 أو أكثر").optional(),
   Category_Id: z.string().optional(),
 });
@@ -102,9 +102,9 @@ export default function EditAuthorModal({ isOpen, onClose, author, onSuccess }: 
     // Clean empty string values and handle "none" category
     const cleanData = {
       ...data,
-      image_url: data.image_url || null,
-      Category_Id: data.Category_Id === "none" ? null : data.Category_Id || null,
-      bio: data.bio || null,
+      image_url: data.image_url || undefined,
+      Category_Id: data.Category_Id === "none" ? undefined : data.Category_Id || undefined,
+      bio: data.bio || undefined,
     };
     updateMutation.mutate(cleanData);
   };
@@ -129,17 +129,17 @@ export default function EditAuthorModal({ isOpen, onClose, author, onSuccess }: 
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">اسم المؤلف *</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       placeholder="أدخل اسم المؤلف"
                       className="bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="bio"
@@ -147,10 +147,10 @@ export default function EditAuthorModal({ isOpen, onClose, author, onSuccess }: 
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">النبذة التعريفية</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="أدخل نبذة تعريفية عن المؤلف..."
                       className="bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500 min-h-[100px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -163,13 +163,53 @@ export default function EditAuthorModal({ isOpen, onClose, author, onSuccess }: 
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">رابط الصورة</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">صورة المؤلف</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="https://example.com/image.jpg"
-                      className="bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                      {...field} 
-                    />
+                    <div className="space-y-4">
+                      {/* Image Preview */}
+                      {field.value && (
+                        <div className="relative w-32 h-32 rounded-full overflow-hidden border border-slate-200 shadow-sm mx-auto">
+                          <img
+                            src={field.value}
+                            alt="Author preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              // Create FormData
+                              const formData = new FormData();
+                              formData.append("cover", file);
+
+                              try {
+                                const res = await fetch("/api/upload?folder=authors", {
+                                  method: "POST",
+                                  body: formData,
+                                });
+
+                                if (!res.ok) throw new Error("فشل رفع الصورة");
+
+                                const data = await res.json();
+                                form.setValue("image_url", data.url);
+                                toast({ title: "تم رفع الصورة بنجاح" });
+                              } catch (err) {
+                                toast({ title: "فشل رفع الصورة", variant: "destructive" });
+                              }
+                            }}
+                            className="cursor-pointer file:cursor-pointer file:text-purple-600 file:font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -183,7 +223,7 @@ export default function EditAuthorModal({ isOpen, onClose, author, onSuccess }: 
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">عدد الكتب</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="number"
                       min="0"
                       placeholder="0"

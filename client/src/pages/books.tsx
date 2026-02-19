@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Book, Author, Category } from "@shared/schema";
 import { TableColumn } from "@/types";
-import { Plus, BookOpen, Eye, Edit, Trash2, FileText, Users, FolderOpen, FileCheck, Search, Filter, Grid, List } from "lucide-react";
+import { Plus, BookOpen, Eye, Edit, Trash2, FileText, Users, FolderOpen, FileCheck, Search, Filter, Grid, List, RotateCcw } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
 import EditBookModal from "@/components/modals/edit-book-modal";
 import ConfirmModal from "@/components/modals/confirm-modal";
+import { BookSearch } from "@/components/books/book-search";
 
 export default function Books() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -78,11 +79,31 @@ export default function Books() {
     }
   };
 
-  const filteredBooks = books.filter((book: any) =>
-    book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    book.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    book.ISBN?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Refetch handler
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] }),
+      queryClient.invalidateQueries({ queryKey: ["/api/authors"] }),
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] })
+    ]);
+    toast({ title: "تم التحديث", description: "تم تحديث قائمة الكتب" });
+  };
+
+  const filteredBooks = books.filter((book: any) => {
+    if (!searchQuery) return true;
+    const term = searchQuery.toLowerCase();
+    const titleMatch = book.title?.toLowerCase().includes(term);
+    const isbnMatch = book.ISBN ? String(book.ISBN).toLowerCase().includes(term) : false;
+
+    // Author match
+    const author = authors.find((a: any) => a.id === book.author_id);
+    const authorMatch = author ? author.name.toLowerCase().includes(term) : false;
+
+    return titleMatch || isbnMatch || authorMatch;
+  }).sort((a: any, b: any) => {
+    // Sort by Publication Date (Newest First)
+    return new Date(b.publication_date).getTime() - new Date(a.publication_date).getTime();
+  });
 
   const columns: TableColumn<any>[] = [
     {
@@ -90,9 +111,9 @@ export default function Books() {
       label: "الغلاف",
       render: (value: string) => (
         <div className="w-12 h-16 rounded-md overflow-hidden bg-gray-100">
-          <img 
-            src={value || "/placeholder-book.svg"} 
-            alt="غلاف الكتاب" 
+          <img
+            src={value || "/placeholder-book.svg"}
+            alt="غلاف الكتاب"
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E";
@@ -239,7 +260,7 @@ export default function Books() {
                 <span className="ml-1 sm:hidden">شبكة</span>
               </Button>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowAddModal(true)}
               className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl rounded-xl px-4 sm:px-6 py-2 sm:py-3 font-medium transition-all duration-200 w-full sm:w-auto"
             >
@@ -267,7 +288,7 @@ export default function Books() {
             <p className="text-blue-100 text-xs">كتاب في المكتبة</p>
           </CardContent>
         </Card>
-        
+
         <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
             <CardTitle className="text-xs font-medium text-purple-100">المؤلفون</CardTitle>
@@ -324,11 +345,26 @@ export default function Books() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-              <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 order-2 sm:order-1">
-                <Search className="h-4 w-4 text-slate-500" />
-                <span className="text-xs sm:text-sm text-slate-600">{filteredBooks.length} من {books.length} كتاب</span>
+              <div className="flex-1 min-w-[300px]">
+                <BookSearch
+                  books={books}
+                  authors={authors}
+                  onSearch={setSearchQuery}
+                  onSelect={(book) => setSearchQuery(book.title)}
+                />
               </div>
               <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 order-1 sm:order-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="rounded-lg"
+                  title="تحديث"
+                >
+                  <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </Button>
+                <div className="w-px h-4 bg-slate-200 mx-1"></div>
                 <Button
                   variant={viewMode === "table" ? "default" : "ghost"}
                   size="sm"
@@ -336,7 +372,6 @@ export default function Books() {
                   className="rounded-lg flex-1 sm:flex-initial"
                 >
                   <List className="h-4 w-4" />
-                  <span className="ml-1 sm:hidden">جدول</span>
                 </Button>
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
@@ -345,7 +380,6 @@ export default function Books() {
                   className="rounded-lg flex-1 sm:flex-initial"
                 >
                   <Grid className="h-4 w-4" />
-                  <span className="ml-1 sm:hidden">شبكة</span>
                 </Button>
               </div>
             </div>
@@ -361,6 +395,7 @@ export default function Books() {
                   loading={isLoading}
                   searchPlaceholder="البحث في الكتب والمؤلفين والأوصاف..."
                   onSearch={setSearchQuery}
+                  hideSearch={true}
                 />
               </div>
             </div>

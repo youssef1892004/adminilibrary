@@ -28,6 +28,7 @@ interface DataTableProps<T> {
   selectedRows?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
   getRowId?: (row: T) => string;
+  hideSearch?: boolean;
 }
 
 export function DataTable<T>({
@@ -43,6 +44,7 @@ export function DataTable<T>({
   selectedRows = [],
   onSelectionChange,
   getRowId,
+  hideSearch = false,
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortColumn, setSortColumn] = useState<keyof T | null>(null);
@@ -55,12 +57,12 @@ export function DataTable<T>({
 
   const handleSort = (column: keyof T) => {
     if (!onSort) return;
-    
+
     let direction: "asc" | "desc" = "asc";
     if (sortColumn === column && sortDirection === "asc") {
       direction = "desc";
     }
-    
+
     setSortColumn(column);
     setSortDirection(direction);
     onSort(column, direction);
@@ -68,7 +70,7 @@ export function DataTable<T>({
 
   const handleSelectAll = (checked: boolean) => {
     if (!onSelectionChange || !getRowId) return;
-    
+
     if (checked) {
       const allIds = data.map(getRowId);
       onSelectionChange(allIds);
@@ -79,7 +81,7 @@ export function DataTable<T>({
 
   const handleSelectRow = (rowId: string, checked: boolean) => {
     if (!onSelectionChange) return;
-    
+
     if (checked) {
       onSelectionChange([...selectedRows, rowId]);
     } else {
@@ -87,7 +89,7 @@ export function DataTable<T>({
     }
   };
 
-  const isAllSelected = data.length > 0 && getRowId && 
+  const isAllSelected = data.length > 0 && getRowId &&
     data.every(row => selectedRows.includes(getRowId(row)));
 
   return (
@@ -95,15 +97,17 @@ export function DataTable<T>({
       {/* Table Filters */}
       <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full"
-            />
-          </div>
+          {!hideSearch && (
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          )}
           {filters}
         </div>
       </div>
@@ -128,7 +132,7 @@ export function DataTable<T>({
                     "text-xs font-medium text-slate-500 uppercase tracking-wider",
                     column.sortable && "cursor-pointer hover:text-slate-700"
                   )}
-                  onClick={() => column.sortable && handleSort(column.key)}
+                  onClick={() => column.sortable && handleSort(column.key as keyof T)}
                 >
                   <div className="flex items-center space-x-1">
                     <span>{column.label}</span>
@@ -143,8 +147,8 @@ export function DataTable<T>({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length + (onSelectionChange ? 1 : 0)} 
+                <TableCell
+                  colSpan={columns.length + (onSelectionChange ? 1 : 0)}
                   className="text-center py-8"
                 >
                   Loading...
@@ -152,8 +156,8 @@ export function DataTable<T>({
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length + (onSelectionChange ? 1 : 0)} 
+                <TableCell
+                  colSpan={columns.length + (onSelectionChange ? 1 : 0)}
                   className="text-center py-8 text-slate-500"
                 >
                   No data available
@@ -163,7 +167,7 @@ export function DataTable<T>({
               data.map((row, index) => {
                 const rowId = getRowId?.(row) || String(index);
                 const isSelected = selectedRows.includes(rowId);
-                
+
                 return (
                   <TableRow key={rowId} className="hover:bg-slate-50">
                     {onSelectionChange && getRowId && (
@@ -176,9 +180,9 @@ export function DataTable<T>({
                     )}
                     {columns.map((column) => (
                       <TableCell key={String(column.key)}>
-                        {column.render 
-                          ? column.render(row[column.key], row)
-                          : String(row[column.key] || "")
+                        {column.render
+                          ? column.render(row[column.key as keyof T], row)
+                          : String(row[column.key as keyof T] || "")
                         }
                       </TableCell>
                     ))}
@@ -208,12 +212,12 @@ export function DataTable<T>({
               <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
             </Button>
-            
+
             {/* Page numbers */}
             {Array.from({ length: Math.min(5, Math.ceil(pagination.total / pagination.pageSize)) }, (_, i) => {
               const pageNum = pagination.page - 2 + i;
               if (pageNum < 1 || pageNum > Math.ceil(pagination.total / pagination.pageSize)) return null;
-              
+
               return (
                 <Button
                   key={pageNum}
@@ -225,7 +229,7 @@ export function DataTable<T>({
                 </Button>
               );
             })}
-            
+
             <Button
               variant="outline"
               size="sm"

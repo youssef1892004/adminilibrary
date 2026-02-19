@@ -10,6 +10,16 @@ import { EditChapterModal } from "@/components/modals/edit-chapter-modal";
 import ConfirmModal from "@/components/modals/confirm-modal";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export function ChaptersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -17,28 +27,43 @@ export function ChaptersPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [selectedBookId, setSelectedBookId] = useState<string>("all");
-  
+
+  // Pagination & Search states
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const limit = 10;
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch chapters
-  const { data: chapters = [], isLoading: chaptersLoading } = useQuery<Chapter[]>({
-    queryKey: ["/api/chapters"],
+  // Fetch chapters with pagination
+  const { data, isLoading: chaptersLoading } = useQuery<{ chapters: Chapter[], total: number }>({
+    queryKey: ["/api/chapters", page, limit, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search
+      });
+      const res = await fetch(`/api/chapters?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch chapters');
+      return res.json();
+    }
   });
+
+  const chapters = data?.chapters || [];
+  const totalChapters = data?.total || 0;
+  const totalPages = Math.ceil(totalChapters / limit);
 
   // Fetch books for filtering
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
   });
 
-  // Filter chapters by selected book
-  const filteredChapters = selectedBookId === "all" 
-    ? chapters 
+  // Filter chapters locally by book if selected (server-side filtering by book not yet implemented in UI flow for global admin)
+  const filteredChapters = selectedBookId === "all"
+    ? chapters
     : chapters.filter((chapter: Chapter) => chapter.book_id === selectedBookId);
-
-  // Debug logs - remove in production
-  // console.log("Chapters data:", chapters);
-  // console.log("Filtered chapters:", filteredChapters);
 
   // Get book name helper
   const getBookName = (bookId: string) => {
@@ -83,73 +108,6 @@ export function ChaptersPage() {
     }
   };
 
-  const columns = [
-    {
-      key: "chapter_num",
-      label: "رقم الفصل",
-      render: (value: number) => (
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-blue-500" />
-          <span className="font-medium">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "title",
-      label: "عنوان الفصل",
-      render: (value: string) => (
-        <div className="max-w-[200px] truncate font-medium">
-          {value}
-        </div>
-      ),
-    },
-    {
-      key: "book_id",
-      label: "الكتاب",
-      render: (value: string) => (
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-green-500" />
-          <span>{getBookName(value)}</span>
-        </div>
-      ),
-    },
-    {
-      key: "content",
-      label: "المحتوى",
-      render: (value: string) => (
-        <div className="max-w-[300px] truncate text-sm text-muted-foreground">
-          {value ? value.substring(0, 100) + "..." : "لا يوجد محتوى"}
-        </div>
-      ),
-    },
-    {
-      key: "actions",
-      label: "الإجراءات",
-      render: (_value: any, chapter: Chapter) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(chapter)}
-            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
-            title="تعديل الفصل"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(chapter)}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-            title="حذف الفصل"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 min-h-screen" dir="rtl">
       {/* Enhanced Header Section - Responsive */}
@@ -171,20 +129,16 @@ export function ChaptersPage() {
             <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-emerald-100 text-sm">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                <span>{chapters.length} فصل</span>
+                <span>{totalChapters} فصل</span>
               </div>
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
                 <span>{books.length} كتاب</span>
               </div>
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4" />
-                <span>{filteredChapters.length} فصل مرئي</span>
-              </div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            <Button 
+            <Button
               onClick={() => setIsAddModalOpen(true)}
               className="bg-white text-emerald-600 hover:bg-emerald-50 shadow-lg hover:shadow-xl rounded-xl px-4 sm:px-6 py-2 sm:py-3 font-medium transition-all duration-200 w-full sm:w-auto"
             >
@@ -198,93 +152,59 @@ export function ChaptersPage() {
         <div className="absolute bottom-0 left-0 w-16 h-16 lg:w-24 lg:h-24 bg-cyan-300/20 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Compact Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
-            <CardTitle className="text-xs font-medium text-blue-100">إجمالي الفصول</CardTitle>
-            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+      {/* Book Filter Card & Search */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-0 bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl lg:rounded-3xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 p-4 sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-xl">
+                <FolderOpen className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-slate-900">تصفية حسب الكتاب</CardTitle>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{chapters.length}</div>
-            <p className="text-blue-100 text-xs">فصل متاح</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
-            <CardTitle className="text-xs font-medium text-purple-100">الكتب</CardTitle>
-            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{books.length}</div>
-            <p className="text-purple-100 text-xs">كتاب مرتبط</p>
-          </CardContent>
-        </Card>
-
-        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
-            <CardTitle className="text-xs font-medium text-emerald-100">الفصول المرئية</CardTitle>
-            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <FileCheck className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{filteredChapters.length}</div>
-            <p className="text-emerald-100 text-xs">فصل معروض</p>
+          <CardContent className="p-4 sm:p-6">
+            <select
+              value={selectedBookId}
+              onChange={(e) => setSelectedBookId(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-slate-900 font-medium shadow-sm"
+            >
+              <option value="all">جميع الكتب</option>
+              {books.map((book: Book) => (
+                <option key={book.id} value={book.id}>
+                  {book.title}
+                </option>
+              ))}
+            </select>
           </CardContent>
         </Card>
 
-        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl rounded-lg lg:rounded-xl overflow-hidden col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
-            <CardTitle className="text-xs font-medium text-orange-100">الكتاب المختار</CardTitle>
-            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+        <Card className="border-0 bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl lg:rounded-3xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 p-4 sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-xl">
+                <Search className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-slate-900">بحث في الفصول</CardTitle>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
-            <div className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">
-              {selectedBookId === "all" ? "جميع الكتب" : getBookName(selectedBookId)}
-            </div>
-            <p className="text-orange-100 text-xs">فلتر نشط</p>
+          <CardContent className="p-4 sm:p-6">
+            <Input
+              placeholder="ابحث عن عنوان الفصل..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // Reset to first page on search
+              }}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 font-medium shadow-sm"
+            />
           </CardContent>
         </Card>
       </div>
-
-      {/* Book Filter Card */}
-      <Card className="border-0 bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl lg:rounded-3xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 p-4 sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-xl">
-              <FolderOpen className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
-            </div>
-            <div>
-              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">تصفية حسب الكتاب</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                اختر كتاب معين لعرض فصوله أو اختر "جميع الكتب" لعرض جميع الفصول
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6">
-          <select
-            value={selectedBookId}
-            onChange={(e) => setSelectedBookId(e.target.value)}
-            className="w-full max-w-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-slate-900 font-medium shadow-sm"
-          >
-            <option value="all">جميع الكتب</option>
-            {books.map((book: Book) => (
-              <option key={book.id} value={book.id}>
-                {book.title}
-              </option>
-            ))}
-          </select>
-        </CardContent>
-      </Card>
 
       {/* Enhanced Data Table - Responsive */}
       <Card className="border-0 bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl lg:rounded-3xl overflow-hidden">
@@ -297,7 +217,7 @@ export function ChaptersPage() {
               <div className="min-w-0 flex-1">
                 <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 truncate">قائمة الفصول</CardTitle>
                 <CardDescription className="text-xs sm:text-sm mt-1">
-                  {filteredChapters.length} فصل من أصل {chapters.length} فصل
+                  عرض {filteredChapters.length} من أصل {totalChapters} نتائج
                 </CardDescription>
               </div>
             </div>
@@ -316,15 +236,12 @@ export function ChaptersPage() {
                   <FileText className="h-12 w-12 mb-4 text-slate-300" />
                   <h3 className="text-lg font-medium mb-2">لا توجد فصول</h3>
                   <p className="text-sm text-center">
-                    {selectedBookId === "all" 
-                      ? "لم يتم العثور على أي فصول في النظام"
-                      : "لا توجد فصول لهذا الكتاب"
-                    }
+                    {search ? "لا توجد نتائج تطابق بحثك" : "لم يتم العثور على أي فصول"}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredChapters.map((chapter: Chapter, index: number) => (
+                  {filteredChapters.map((chapter: Chapter) => (
                     <div
                       key={chapter.id}
                       className="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow duration-200"
@@ -347,27 +264,20 @@ export function ChaptersPage() {
                                 <BookOpen className="h-3 w-3" />
                                 <span>{getBookName(chapter.book_id)}</span>
                               </div>
-                              {chapter.content && (
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-3 w-3" />
-                                  <span>
-                                    {Array.isArray(chapter.content) 
-                                      ? `${chapter.content.length} فقرة`
-                                      : `${chapter.content.length} حرف`
-                                    }
-                                  </span>
-                                </div>
-                              )}
                             </div>
-                            {chapter.content && (
-                              <p className="text-xs text-slate-400 mt-2 line-clamp-2">
-                                {Array.isArray(chapter.content) 
-                                  ? chapter.content.join(' ').substring(0, 150) + '...'
-                                  : chapter.content.substring(0, 150) + '...'
-                                }
-                              </p>
-                            )}
-                          </div>
+                            {!!chapter.content && (
+                              <div className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                <span>
+                                  {Array.isArray(chapter.content)
+                                    ? `${(chapter.content as any[]).length} فقرة`
+                                    : typeof chapter.content === 'string'
+                                      ? `${(chapter.content as string).length} حرف`
+                                      : '0 حرف'
+                                  }
+                                </span>
+                              </div>
+                            )}</div>
                         </div>
                         <div className="flex items-center gap-2 ml-4">
                           <Button
@@ -395,6 +305,41 @@ export function ChaptersPage() {
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center dir-ltr">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i + 1}>
+                        <PaginationLink
+                          isActive={page === i + 1}
+                          onClick={() => setPage(i + 1)}
+                          className="cursor-pointer"
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

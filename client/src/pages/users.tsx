@@ -11,6 +11,7 @@ import { DataTable } from "@/components/ui/data-table";
 import AddUserModal from "@/components/modals/add-user-modal";
 import EditUserModal from "@/components/modals/edit-user-modal";
 import ConfirmModal from "@/components/modals/confirm-modal";
+import { UserSearch } from "@/components/users/user-search";
 
 import { apiRequest } from "@/lib/queryClient";
 import type { User, TableColumn } from "@/types";
@@ -18,7 +19,7 @@ import type { User, TableColumn } from "@/types";
 export default function Users() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -26,13 +27,14 @@ export default function Users() {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: users = [], isLoading, refetch } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id: string) => 
+    mutationFn: (id: string) =>
       apiRequest(`/api/users/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -53,12 +55,29 @@ export default function Users() {
   });
 
   const filteredUsers = users.filter((user) => {
+    // Role Filter
     if (roleFilter !== "all" && user.defaultRole !== roleFilter) return false;
+
+    // Status Filter
     if (statusFilter === "active" && user.disabled) return false;
     if (statusFilter === "disabled" && !user.disabled) return false;
     if (statusFilter === "verified" && !user.emailVerified) return false;
     if (statusFilter === "unverified" && user.emailVerified) return false;
+
+    // Search Filter
+    if (searchQuery) {
+      const term = searchQuery.toLowerCase();
+      const matchName = user.displayName.toLowerCase().includes(term);
+      const matchEmail = user.email.toLowerCase().includes(term);
+      const matchPhone = user.phoneNumber?.toLowerCase().includes(term);
+
+      if (!matchName && !matchEmail && !matchPhone) return false;
+    }
+
     return true;
+  }).sort((a, b) => {
+    // Sort from Oldest to Newest (Ascending)
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   const handleEditUser = (user: User) => {
@@ -204,7 +223,7 @@ export default function Users() {
           <SelectItem value="author">Author</SelectItem>
         </SelectContent>
       </Select>
-      
+
       <Select value={statusFilter} onValueChange={setStatusFilter}>
         <SelectTrigger className="w-36 bg-white/80 dark:bg-slate-700/80 backdrop-blur border-slate-200 dark:border-slate-600">
           <SelectValue placeholder="All Status" />
@@ -240,18 +259,32 @@ export default function Users() {
                 </p>
               </div>
             </div>
-            
+
+            <div className="flex-1 px-8">
+              <UserSearch
+                users={users}
+                onSearch={setSearchQuery}
+                onSelect={(user) => {
+                  setSearchQuery(user.displayName);
+                }}
+              />
+            </div>
+
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => refetch()}
+                onClick={async () => {
+                  await refetch();
+                  toast({ title: "Refreshed", description: "User list updated" });
+                }}
+                disabled={isLoading}
                 className="h-7 text-xs px-2"
               >
-                <RotateCcw className="w-3 h-3 mr-1" />
+                <RotateCcw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button 
+              <Button
                 size="sm"
                 onClick={() => setShowAddModal(true)}
                 className="h-7 bg-blue-600 hover:bg-blue-700 text-xs px-2"
@@ -262,7 +295,7 @@ export default function Users() {
             </div>
           </div>
         </div>
-        
+
         {/* Data Table Section */}
         <div className="p-0">
           <DataTable
@@ -274,6 +307,7 @@ export default function Users() {
             selectedRows={selectedRows}
             onSelectionChange={setSelectedRows}
             getRowId={(user) => user.id}
+            hideSearch={true}
           />
         </div>
       </div>
@@ -283,15 +317,15 @@ export default function Users() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
       />
-      
+
       <EditUserModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
         user={selectedUser as any}
       />
-      
+
       <ConfirmModal
-        open={showDeleteModal}
+        isOpen={showDeleteModal}
         onOpenChange={(open) => setShowDeleteModal(open)}
         onConfirm={handleConfirmDelete}
         title="Delete User"

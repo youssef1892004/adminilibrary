@@ -30,9 +30,10 @@ export interface CreateUserData {
   emailVerified: boolean;
   disabled: boolean;
   locale: "en" | "ar" | "fr";
+  password?: string;
 }
 
-export interface UpdateUserData extends Partial<CreateUserData> {}
+export interface UpdateUserData extends Partial<CreateUserData> { }
 
 export interface TableColumn<T> {
   key: keyof T | string;

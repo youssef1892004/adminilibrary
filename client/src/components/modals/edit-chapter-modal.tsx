@@ -72,7 +72,7 @@ export function EditChapterModal({ isOpen, onClose, onSubmit, chapter, books, is
     if (chapter) {
       form.reset({
         title: chapter.title,
-        content: Array.isArray(chapter.content) ? chapter.content.join('\n') : chapter.content || "",
+        content: Array.isArray(chapter.content) ? (chapter.content as any[]).join('\n') : (typeof chapter.content === 'string' ? chapter.content : "") || "",
         chapter_num: chapter.chapter_num,
         book_id: chapter.book_id,
       });
