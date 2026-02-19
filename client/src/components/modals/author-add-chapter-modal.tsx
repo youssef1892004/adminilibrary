@@ -24,21 +24,21 @@ export function AuthorAddChapterModal({ isOpen, onClose, onSubmit, books, isLoad
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title || !formData.chapter_num || !formData.book__id) {
       return; // Basic validation
     }
-    
+
     const chapterData = {
       title: formData.title,
       chapter_num: parseInt(formData.chapter_num),
       content: formData.content || "", // Ensure content is not empty
       book__id: formData.book__id, // Keep book__id for author
     };
-    
+
     console.log("Submitting author chapter data:", chapterData);
     onSubmit(chapterData);
-    
+
     // Reset form
     setFormData({
       title: "",
@@ -105,23 +105,12 @@ export function AuthorAddChapterModal({ isOpen, onClose, onSubmit, books, isLoad
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="content">محتوى الفصل</Label>
-            <Textarea
-              id="content"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="اكتب محتوى الفصل هنا..."
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               إلغاء
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "جاري الإضافة..." : "إضافة الفصل"}
+            <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {isLoading ? "جاري الإنشاء..." : "إنشاء وبدء الكتابة"}
             </Button>
           </div>
         </form>

@@ -21,7 +21,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+import { Link, useLocation } from "wouter";
+
 export default function AuthorChapters() {
+  const [, setLocation] = useLocation();
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
   const [isAddChapterOpen, setIsAddChapterOpen] = useState(false);
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
@@ -109,13 +112,19 @@ export default function AuthorChapters() {
   // Create chapter mutation
   const createMutation = useMutation({
     mutationFn: (chapterData: any) => libraryApi.createChapter(chapterData),
-    onSuccess: () => {
+    onSuccess: (newChapter: any) => {
       toast({
         title: "تم إضافة الفصل",
-        description: "تم إضافة الفصل بنجاح",
+        description: "جاري الانتقال لصفحة الكتابة...",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
       setIsAddChapterOpen(false);
+      // Redirect to the write page
+      // Handle potential array response from backend
+      const chapterId = newChapter.id || (Array.isArray(newChapter) && newChapter[0]?.id) || (newChapter.returning && newChapter.returning[0]?.id);
+      if (chapterId) {
+        setLocation(`/author/write-chapter/${chapterId}`);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -386,11 +395,22 @@ export default function AuthorChapters() {
                         </div>
 
                         <div className="flex items-center gap-2 self-start md:self-center">
+                          <Link href={`/author/write-chapter/${chapter.id}`}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                              title="كتابة المحتوى"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEditChapter(chapter)}
                             className="text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                            title="تعديل التفاصيل"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

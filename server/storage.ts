@@ -1099,6 +1099,7 @@ class GraphQLStorage implements IStorage {
           title
           content
           chapter_num
+          book__id
         }
       }
     `;
@@ -1157,9 +1158,23 @@ class GraphQLStorage implements IStorage {
   }
 
   async updateChapter(id: string, chapter: UpdateChapter): Promise<Chapter | undefined> {
+    // Only include fields that are being updated (not null/undefined)
+    const updateFields: any = {};
+    if (chapter.chapter_num !== undefined) updateFields.chapter_num = chapter.chapter_num;
+    if (chapter.content !== undefined) updateFields.content = typeof chapter.content === 'string' ? [chapter.content] : chapter.content;
+    if (chapter.title !== undefined) updateFields.title = chapter.title;
+    if (chapter.book_id !== undefined) updateFields.book__id = chapter.book_id;
+
+    // Dynamically build the _set object string
+    const setParts = [];
+    if (updateFields.chapter_num !== undefined) setParts.push('chapter_num: $chapter_num');
+    if (updateFields.content !== undefined) setParts.push('content: $content');
+    if (updateFields.title !== undefined) setParts.push('title: $title');
+    if (updateFields.book__id !== undefined) setParts.push('book__id: $book__id');
+
     const mutation = `
-      mutation UpdateChapter($id: uuid!, $chapter_num: Int, $content: jsonb, $title: String, $book__id: uuid) {
-        update_libaray_Chapter_by_pk(pk_columns: {id: $id}, _set: {chapter_num: $chapter_num, content: $content, title: $title, book__id: $book__id}) {
+      mutation UpdateChapter($id: uuid!${updateFields.chapter_num !== undefined ? ', $chapter_num: Int' : ''}${updateFields.content !== undefined ? ', $content: jsonb' : ''}${updateFields.title !== undefined ? ', $title: String' : ''}${updateFields.book__id !== undefined ? ', $book__id: uuid' : ''}) {
+        update_libaray_Chapter_by_pk(pk_columns: {id: $id}, _set: { ${setParts.join(', ')} }) {
           id
           title
           content
@@ -1169,13 +1184,6 @@ class GraphQLStorage implements IStorage {
         }
       }
     `;
-
-    // Only include fields that are being updated (not null/undefined)
-    const updateFields: any = {};
-    if (chapter.chapter_num !== undefined) updateFields.chapter_num = chapter.chapter_num;
-    if (chapter.content !== undefined) updateFields.content = typeof chapter.content === 'string' ? [chapter.content] : chapter.content;
-    if (chapter.title !== undefined) updateFields.title = chapter.title;
-    if (chapter.book_id !== undefined) updateFields.book__id = chapter.book_id;
 
     const variables = {
       id,

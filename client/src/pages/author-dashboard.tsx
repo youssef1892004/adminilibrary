@@ -1,21 +1,15 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, FileText, PlusCircle, Edit, Trash2, Eye, LayoutDashboard, TrendingUp } from "lucide-react";
+import { BookOpen, FileText, PlusCircle, Edit, Trash2, Eye, LayoutDashboard, TrendingUp, Clock, ArrowRight } from "lucide-react";
 import { libraryApi } from "@/lib/api";
 import ConfirmModal from "@/components/modals/confirm-modal";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 
 export default function AuthorDashboard() {
-  const [selectedBook, setSelectedBook] = useState<any>(null);
-  const [isAddBookOpen, setIsAddBookOpen] = useState(false);
-  const [isEditBookOpen, setIsEditBookOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [bookToDelete, setBookToDelete] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -34,68 +28,19 @@ export default function AuthorDashboard() {
     queryFn: () => libraryApi.getBooks(),
   });
 
-  // Fetch categories for book creation
-  const { data: categories = [] } = useQuery({
-    queryKey: ["/api/categories"],
-    queryFn: () => libraryApi.getCategories(),
-  });
-
-
-
-
-
-  // Delete book mutation
-  const deleteMutation = useMutation({
-    mutationFn: (bookId: string) => libraryApi.deleteBook(bookId),
-    onSuccess: () => {
-      toast({
-        title: "تم حذف الكتاب",
-        description: "تم حذف الكتاب بنجاح",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
-      setIsDeleteConfirmOpen(false);
-      setBookToDelete(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "خطأ في حذف الكتاب",
-        description: error.message || "حدث خطأ أثناء حذف الكتاب",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleDeleteBook = (book: any) => {
-    setBookToDelete(book);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const handleEditBook = (book: any) => {
-    setSelectedBook(book);
-    setIsEditBookOpen(true);
-  };
-
-  const handleViewChapters = (book: any) => {
-    // Navigate to chapters page with book filter
-    window.location.href = `/author-chapters?bookId=${book.id}`;
-  };
-
   // Calculate statistics
   const totalBooks = books.length;
-  // Calculate total chapters from the books data which now has accurate counts
+  // Calculate total chapters from the books data
   const totalChapters = books.reduce((acc: number, book: any) => acc + (book.chapter_num || 0), 0);
-
-  const publishedBooks = books.filter((book: any) => book.status === 'published').length;
-  const draftBooks = books.filter((book: any) => book.status === 'draft').length;
   const averageChaptersPerBook = totalBooks > 0 ? Math.round(totalChapters / totalBooks) : 0;
 
   if (isLoading) {
     return (
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="h-48 bg-gray-200 rounded-3xl animate-pulse"></div>
+      <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+            <div key={i} className="h-32 bg-slate-100 rounded-2xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -103,184 +48,210 @@ export default function AuthorDashboard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-slate-50 min-h-screen" dir="rtl">
+    <div className="min-h-screen bg-slate-50/50 pb-20" dir="rtl">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
 
-      {/* Unified Header Section */}
-      <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-sidebar via-sidebar/95 to-sidebar-primary/90 p-6 lg:p-10 text-white shadow-xl border border-sidebar-border">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-32 translate-x-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl translate-y-24 -translate-x-24"></div>
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl bg-[#0F172A] text-white shadow-2xl shadow-blue-900/10">
+          {/* Background Effects */}
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4"></div>
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-purple-600/20 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/4"></div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                <LayoutDashboard className="h-6 w-6 text-blue-200" />
+          <div className="relative z-10 p-6 sm:p-10 lg:p-12">
+            <div className="flex flex-col lg:flex-row justify-between items-start gap-8 lg:gap-12">
+              <div className="space-y-6 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 backdrop-blur-md">
+                  <LayoutDashboard className="h-4 w-4 text-blue-300" />
+                  <span className="text-sm font-medium text-blue-100">لوحة تحكم الكاتب</span>
+                </div>
+
+                <div className="space-y-4">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
+                    أهلاً بك في <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">مكتبتك الرقمية</span>
+                  </h1>
+                  <p className="text-lg text-slate-300 leading-relaxed max-w-xl">
+                    المكان الأمثل لإدارة إبداعاتك. تتبع إحصائيات كتبك، أضف فصولاً جديدة، وتفاعل مع قرائك بكل سهولة.
+                  </p>
+                </div>
               </div>
-              <span className="text-blue-200 font-medium">لوحة التحكم</span>
+
+              {/* Quick Actions Card */}
+              <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-3 min-w-[300px]">
+                <Link href="/author-books" className="flex-1">
+                  <Button className="w-full bg-white text-slate-900 hover:bg-blue-50 hover:text-blue-700 font-bold h-14 rounded-2xl shadow-lg shadow-white/5 transition-all duration-300 border border-transparent hover:border-blue-100 flex items-center justify-center gap-3 group">
+                    <div className="bg-blue-100 p-1.5 rounded-lg group-hover:bg-blue-200 transition-colors">
+                      <BookOpen className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <span>إدارة الكتب</span>
+                    <ArrowRight className="h-4 w-4 mr-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                  </Button>
+                </Link>
+
+                <Link href="/author-chapters" className="flex-1">
+                  <Button variant="outline" className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10 h-14 rounded-2xl backdrop-blur-md transition-all duration-300 flex items-center justify-center gap-3">
+                    <FileText className="h-5 w-5" />
+                    <span>الفصول</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight">
-              أهلاً وسهلاً بك في مكتبتك
-            </h1>
-            <p className="text-blue-100/80 text-lg max-w-2xl leading-relaxed">
-              إدارة شاملة لمكتبتك الرقمية وأعمالك الأدبية مع أدوات متقدمة للتحكم والنشر
-            </p>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+          <Card className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white group overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-50/80 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0">
+                  كتب منشورة
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-slate-900">{totalBooks}</h3>
+                <p className="text-sm font-medium text-slate-500">إجمالي الكتب في مكتبتك</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white group overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-green-400"></div>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-emerald-50/80 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <FileText className="h-6 w-6 text-emerald-600" />
+                </div>
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-0">
+                  فصول
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-slate-900">{totalChapters}</h3>
+                <p className="text-sm font-medium text-slate-500">
+                  بمعدل {averageChaptersPerBook} فصل لكل كتاب
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white group overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-400"></div>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-purple-50/80 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <Eye className="h-6 w-6 text-purple-600" />
+                </div>
+                <Badge variant="secondary" className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-0">
+                  قريباً
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-slate-900">--</h3>
+                <p className="text-sm font-medium text-slate-500">إحصائيات القراء والمشاهدات</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Books Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-slate-400" />
+                آخر التحديثات
+              </h2>
+              <Link href="/author-books">
+                <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  عرض الجميع
+                </Button>
+              </Link>
+            </div>
+
+            {books.length > 0 ? (
+              <div className="grid gap-4">
+                {books.slice(0, 3).map((book: any) => (
+                  <div key={book.id} className="group bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-5">
+                    <div className="h-20 w-16 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 relative shadow-sm">
+                      {book.coverImage ? (
+                        <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
+                          <BookOpen className="h-6 w-6" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-slate-900 text-lg mb-1 truncate group-hover:text-blue-600 transition-colors">
+                        {book.title}
+                      </h3>
+                      <div className="flex items-center gap-3 text-sm text-slate-500">
+                        <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                          <FileText className="h-3.5 w-3.5" />
+                          {book.chapter_num || 0} فصول
+                        </span>
+                        <span className="text-slate-300">|</span>
+                        <span>
+                          {book.status === 'published' ? 'منشور' : 'مسودة'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link href={`/author-chapters?bookId=${book.id}`}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-8 w-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">لا توجد كتب بعد</h3>
+                <p className="text-slate-500 mb-6 max-w-sm mx-auto">ابدأ رحلتك الكتابية اليوم وأضف كتابك الأول إلى المكتبة</p>
+                <Link href="/author-books">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    إضافة كتاب جديد
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto mt-4 lg:mt-0">
-            <Link href="/author-books">
-              <Button className="w-full sm:w-auto bg-white text-sidebar-primary hover:bg-blue-50 font-medium shadow-sm hover:shadow-md transition-all text-base py-6 h-auto px-6 rounded-xl">
-                <BookOpen className="ml-2 h-5 w-5" />
-                إدارة الكتب
-              </Button>
-            </Link>
-            <Link href="/author-chapters">
-              <Button variant="outline" className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 font-medium text-base py-6 h-auto px-6 rounded-xl backdrop-blur-sm">
-                <FileText className="ml-2 h-5 w-5" />
-                إدارة الفصول
-              </Button>
-            </Link>
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-slate-400" />
+              أحدث النشاطات
+            </h2>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-3xl overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-16 translate-x-8"></div>
+              <CardContent className="p-8 text-center relative z-10">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl mb-4 text-white">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">سجل النشاطات</h3>
+                <p className="text-blue-100 leading-relaxed mb-6">
+                  قريباً ستتمكن من تتبع جميع نشاطاتك، تعليقات القراء، وتقييمات كتبك من هنا مباشرة.
+                </p>
+                <Button variant="outline" className="border-white/20 hover:bg-white/10 text-white w-full rounded-xl">
+                  استكشف المزيد
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <Card className="group hover:scale-[1.02] transition-all duration-300 border-0 bg-white shadow-sm hover:shadow-md rounded-xl overflow-hidden border-t-4 border-t-blue-500">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-1">الكتب المنشورة</h3>
-                <div className="text-3xl font-bold text-slate-900">{totalBooks}</div>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
-                <BookOpen className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm text-slate-500">
-              <span className="text-blue-600 font-medium ml-1">كتب</span>
-              في مكتبتك الخاصة
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="group hover:scale-[1.02] transition-all duration-300 border-0 bg-white shadow-sm hover:shadow-md rounded-xl overflow-hidden border-t-4 border-t-emerald-500">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-1">إجمالي الفصول</h3>
-                <div className="text-3xl font-bold text-slate-900">{totalChapters}</div>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-xl group-hover:bg-emerald-100 transition-colors">
-                <FileText className="h-6 w-6 text-emerald-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm text-slate-500">
-              <span className="text-emerald-600 font-medium ml-1">{averageChaptersPerBook}</span>
-              متوسط لكل كتاب
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="group hover:scale-[1.02] transition-all duration-300 border-0 bg-white shadow-sm hover:shadow-md rounded-xl overflow-hidden border-t-4 border-t-purple-500">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-1">المشاهدات</h3>
-                <div className="text-3xl font-bold text-slate-900">0</div>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-xl group-hover:bg-purple-100 transition-colors">
-                <Eye className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm text-slate-500">
-              <TrendingUp className="h-3 w-3 ml-1 text-slate-400" />
-              إحصائيات القراء
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions / Recent Activity Placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold text-slate-800">آخر الكتب المضافة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {books.length > 0 ? (
-              <div className="space-y-4">
-                {books.slice(0, 3).map((book: any) => (
-                  <div key={book.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-14 bg-slate-200 rounded overflow-hidden">
-                        {book.coverImage ? (
-                          <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                            <BookOpen className="h-4 w-4 text-slate-400" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-slate-900">{book.title}</h4>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                          <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                            {book.chapter_num || 0} فصول
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleEditBook(book)}>
-                      <Edit className="h-4 w-4 text-slate-500" />
-                    </Button>
-                  </div>
-                ))}
-                <Link href="/author-books">
-                  <div className="text-center mt-4">
-                    <Button variant="link" className="text-blue-600">عرض كل الكتب</Button>
-                  </div>
-                </Link>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                <BookOpen className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-                <p>لا توجد كتب مضافة بعد</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold text-slate-800">نشاط حديث</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12 text-slate-500">
-              <p>سيتم عرض نشاطاتك الأخيرة هنا قريباً...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modals */}
-      <ConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        title="حذف الكتاب"
-        description={`هل أنت متأكد من حذف كتاب "${bookToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.`}
-        onConfirm={() => {
-          if (bookToDelete) {
-            deleteMutation.mutate(bookToDelete.id);
-          }
-        }}
-        onOpenChange={(open) => {
-          setIsDeleteConfirmOpen(open);
-          if (!open) {
-            setBookToDelete(null);
-          }
-        }}
-        isLoading={deleteMutation.isPending}
-      />
     </div>
   );
 }

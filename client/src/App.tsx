@@ -17,6 +17,7 @@ import Login from "@/pages/login";
 import AuthorDashboard from "@/pages/author-dashboard";
 import AuthorBooks from "@/pages/author-books";
 import AuthorChapters from "@/pages/author-chapters";
+import WriteChapterPage from "@/pages/write-chapter";
 import AuthorProfile from "@/pages/author-profile";
 import AuthorNavbar from "@/components/layout/author-navbar";
 import NotFound from "@/pages/not-found";
@@ -117,8 +118,9 @@ function Router() {
                 <Route path="/" component={() => <AuthorDashboard />} />
                 <Route path="/author-dashboard" component={() => <AuthorDashboard />} />
                 <Route path="/author-books" component={() => <AuthorBooks />} />
-                <Route path="/author-chapters" component={() => <AuthorChapters />} />
-                <Route path="/author-profile" component={() => <AuthorProfile />} />
+                <Route path="/author-chapters" component={AuthorChapters} />
+                <Route path="/author/write-chapter/:id" component={WriteChapterPage} />
+                <Route path="/author-profile" component={AuthorProfile} />
                 <Route component={() => <AuthorDashboard />} />
               </Switch>
             </div>
