@@ -529,11 +529,36 @@ class GraphQLStorage implements IStorage {
     try {
       const data = await graphqlRequest(query, { user_id: userId });
       if (data.libaray_Autor && data.libaray_Autor.length > 0) {
-        return {
-          ...data.libaray_Autor[0],
-          birth_date: null,
-          nationality: null
-        };
+        const author = data.libaray_Autor[0];
+
+        // Fetch actual book count using a separate query to avoid relationship issues
+        const countQuery = `
+          query GetAuthorBookCount($author_id: uuid!) {
+            libaray_Book_aggregate(where: {author_id: {_eq: $author_id}}) {
+              aggregate {
+                count
+              }
+            }
+          }
+        `;
+
+        try {
+          const countData = await graphqlRequest(countQuery, { author_id: author.id });
+          const actualBookCount = countData.libaray_Book_aggregate?.aggregate?.count || 0;
+          return {
+            ...author,
+            book_num: actualBookCount,
+            birth_date: null,
+            nationality: null
+          };
+        } catch (countError) {
+          console.error("Error fetching book count, falling back to stored value:", countError);
+          return {
+            ...author,
+            birth_date: null,
+            nationality: null
+          };
+        }
       }
       return undefined;
     } catch (error) {
@@ -653,13 +678,43 @@ class GraphQLStorage implements IStorage {
       }
     `;
 
+    const chaptersQuery = `
+      query GetChapterCounts {
+        libaray_Chapter {
+          book__id
+        }
+      }
+    `;
+
     try {
-      const data = await graphqlRequest(query);
-      return data.libaray_Book.map((book: any) => ({
-        ...book,
+      const [booksData, chaptersData] = await Promise.all([
+        graphqlRequest(query),
+        graphqlRequest(chaptersQuery)
+      ]);
+
+      // Count chapters per book
+      const chapterCounts = new Map<string, number>();
+      if (chaptersData.libaray_Chapter) {
+        chaptersData.libaray_Chapter.forEach((chapter: any) => {
+          if (chapter.book__id) {
+            chapterCounts.set(chapter.book__id, (chapterCounts.get(chapter.book__id) || 0) + 1);
+          }
+        });
+      }
+
+      return booksData.libaray_Book.map((book: any) => ({
+        id: book.id,
+        title: book.title,
+        description: book.description,
+        ISBN: book.ISBN?.toString(),
         cover_URL: book.coverImage,
         publication_date: book.publicationDate,
-        category_id: book.Category_id
+        parts_num: chapterCounts.get(book.id) || 0,
+        chapter_num: chapterCounts.get(book.id) || 0, // Use the dynamically calculated count
+        total_pages: book.total_pages,
+        author_id: book.author_id,
+        category_id: book.Category_id,
+        most_view: 0
       }));
     } catch (error) {
       console.error("GraphQL error getting books:", error);
@@ -948,11 +1003,18 @@ class GraphQLStorage implements IStorage {
     const search = options?.search || "";
 
     const whereClause: any = {};
+
+    // Explicitly handle empty array case - if bookIds is passed but empty, return empty result
+    console.log("storage.getChapters called with bookIds:", bookIds?.length, JSON.stringify(bookIds));
+    if (bookIds !== undefined && bookIds.length === 0) {
+      console.log("storage.getChapters returning empty result because bookIds is empty array");
+      return { chapters: [], total: 0 };
+    }
+
     if (bookIds && bookIds.length > 0) {
       whereClause.book__id = { _in: bookIds };
     } else {
-      // If no bookIds provided, we want all chapters
-      // The previous logic was implicitly getting all chapters if bookIds was empty
+      // If bookIds is undefined, we want all chapters (Admin case)
     }
 
     if (search) {

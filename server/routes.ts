@@ -651,13 +651,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const authorBookIds = authorBooks.map((book: any) => book.id);
 
           // Use GraphQL filtering + Pagination + Search
-          result = await storage.getChapters(authorBookIds, { page, limit, search });
+          // Pass empty array if no books to ensure we get 0 results
+          const bookIdsToSearch = authorBookIds.length > 0 ? authorBookIds : [];
+          console.log("Calling getChapters with bookIds:", JSON.stringify(bookIdsToSearch));
+
+          result = await storage.getChapters(bookIdsToSearch, { page, limit, search });
           console.log("Filtered chapters count for author:", author.id, ":", result.total);
         } else {
+          console.log("No author found for user, returning empty chapters");
           result = { chapters: [], total: 0 }; // No author found, no chapters
         }
       } else {
         // Admin users get all chapters with pagination
+        // Pass undefined to signal "all chapters"
         result = await storage.getChapters(undefined, { page, limit, search });
       }
 

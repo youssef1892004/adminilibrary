@@ -2,21 +2,25 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { libraryApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Category } from "@shared/schema";
-import { 
-  Plus, 
-  FolderOpen, 
-  Edit, 
-  Trash2, 
+import { TableColumn } from "@/types";
+import {
+  Plus,
+  FolderOpen,
+  Edit,
+  Trash2,
   Search,
-  Grid3X3,
+  Grid,
   List,
-  Filter,
+  RotateCcw,
   Archive,
-  Bookmark
+  Bookmark,
+  Hash
 } from "lucide-react";
 import AddCategoryModal from "@/components/modals/add-category-modal";
 import EditCategoryModal from "@/components/modals/edit-category-modal";
@@ -37,7 +41,11 @@ export default function Categories() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -83,228 +91,374 @@ export default function Categories() {
     }
   };
 
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+    toast({ title: "تم التحديث", description: "تم تحديث قائمة التصنيفات" });
+  };
+
   const filteredCategories = categories.filter((category: Category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Loading skeleton
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 sm:p-6 lg:p-8" dir="rtl">
-        <div className="animate-pulse space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="h-8 bg-gray-200 rounded-lg w-48"></div>
-              <div className="h-4 bg-gray-200 rounded-lg w-64"></div>
-            </div>
-            <div className="h-12 bg-gray-200 rounded-xl w-48"></div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-2xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 sm:p-6 lg:p-8" dir="rtl">
-      {/* Header Section */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              إدارة التصنيفات
-            </h1>
-            <p className="text-gray-600 text-base sm:text-lg">
-              إدارة وتنظيم تصنيفات المكتبة الإلكترونية
-            </p>
+
+  const columns: TableColumn<Category>[] = [
+    {
+      key: "id",
+      label: "المعرف",
+      render: (value) => (
+        <div className="flex items-center gap-2 text-slate-500 font-mono text-xs">
+          <Hash className="h-3 w-3" />
+          {value.slice(0, 8)}...
+        </div>
+      )
+    },
+    {
+      key: "name",
+      label: "اسم التصنيف",
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-emerald-100 rounded-lg">
+            <FolderOpen className="h-4 w-4 text-emerald-600" />
           </div>
-          <Button 
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 
-                     text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 
-                     transition-all duration-200 rounded-xl px-6 py-3 text-base font-medium
-                     w-full sm:w-auto"
+          <span className="font-medium text-slate-900">{value}</span>
+        </div>
+      )
+    },
+    {
+      key: "created_at", // Assuming created_at exists, generic render
+      label: "تاريخ الإنشاء",
+      render: () => <span className="text-slate-500 text-sm">-</span>
+    },
+    {
+      key: "actions", // Virtual key
+      label: "الإجراءات",
+      render: (_, category) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditCategory(category)}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
           >
-            <Plus className="h-5 w-5 ml-2" />
-            إضافة تصنيف جديد
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteCategory(category)}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+      ),
+    },
+  ];
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100 text-sm font-medium">إجمالي التصنيفات</p>
-                  <p className="text-3xl font-bold text-white">{categories.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <FolderOpen className="h-8 w-8 text-white" />
-                </div>
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 lg:space-y-6 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 min-h-screen" dir="rtl">
+      {/* Enhanced Header Section - Unified Theme */}
+      <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-sidebar via-sidebar/95 to-sidebar-primary/90 p-4 sm:p-6 lg:p-8 text-white shadow-2xl border border-sidebar-border">
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0">
+          <div className="space-y-3 w-full lg:w-auto">
+            <div className="flex items-center gap-3">
+              <div className="p-2 lg:p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <FolderOpen className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-teal-500 to-cyan-600 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-teal-100 text-sm font-medium">التصنيفات النشطة</p>
-                  <p className="text-3xl font-bold text-white">{filteredCategories.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <Archive className="h-8 w-8 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-cyan-100 text-sm font-medium">نتائج البحث</p>
-                  <p className="text-3xl font-bold text-white">{filteredCategories.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <Filter className="h-8 w-8 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">المفضلة</p>
-                  <p className="text-3xl font-bold text-white">{categories.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <Bookmark className="h-8 w-8 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and View Controls */}
-        <Card className="bg-white/80 backdrop-blur-md border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 max-w-md w-full">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="البحث في التصنيفات..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10 bg-white border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl"
-                />
-              </div>
-              <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className={`rounded-lg ${viewMode === 'grid' ? 'bg-emerald-500 text-white' : 'text-gray-600'}`}
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className={`rounded-lg ${viewMode === 'list' ? 'bg-emerald-500 text-white' : 'text-gray-600'}`}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">إدارة التصنيفات</h1>
+                <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
+                  إدارة وتنظيم تصنيفات المكتبة الإلكترونية
+                </p>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-blue-100 text-sm">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                <span>{categories.length} تصنيف</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Archive className="h-4 w-4" />
+                <span>{filteredCategories.length} نشط</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center bg-white/10 rounded-xl p-1 backdrop-blur-sm">
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="text-white hover:bg-white/20 flex-1 sm:flex-initial"
+              >
+                <List className="h-4 w-4" />
+                <span className="ml-1 sm:hidden">جدول</span>
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="text-white hover:bg-white/20 flex-1 sm:flex-initial"
+              >
+                <Grid className="h-4 w-4" />
+                <span className="ml-1 sm:hidden">شبكة</span>
+              </Button>
+            </div>
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl rounded-xl px-4 sm:px-6 py-2 sm:py-3 font-medium transition-all duration-200 w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+              <span className="text-sm sm:text-base">إضافة تصنيف جديد</span>
+            </Button>
+          </div>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-24 h-24 lg:w-32 lg:h-32 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 lg:w-24 lg:h-24 bg-purple-300/20 rounded-full blur-2xl"></div>
+      </div>
+
+      {/* Compact Statistics Cards - Unified Dark Navy Theme */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md rounded-lg lg:rounded-xl overflow-hidden border-t-4 border-t-emerald-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">إجمالي التصنيفات</CardTitle>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
+              <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">{categories.length}</div>
+            <p className="text-slate-400 text-xs">تصنيف مسجل</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md rounded-lg lg:rounded-xl overflow-hidden border-t-4 border-t-teal-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">التصنيفات النشطة</CardTitle>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-teal-50 dark:bg-teal-900/20 rounded-lg flex items-center justify-center">
+              <Archive className="h-3 w-3 sm:h-4 sm:w-4 text-teal-600 dark:text-teal-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">{filteredCategories.length}</div>
+            <p className="text-slate-400 text-xs">تصنيف نشط</p>
+          </CardContent>
+        </Card>
+
+        {/* Placeholder cards for consistency */}
+        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md rounded-lg lg:rounded-xl overflow-hidden border-t-4 border-t-cyan-500 hidden lg:block">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">جديد هذا الشهر</CardTitle>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg flex items-center justify-center">
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-600 dark:text-cyan-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">-</div>
+            <p className="text-slate-400 text-xs">تصنيف جديد</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:scale-[1.02] transition-all duration-200 border-0 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md rounded-lg lg:rounded-xl overflow-hidden border-t-4 border-t-blue-500 col-span-2 lg:col-span-1 hidden lg:block">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 relative p-2 sm:p-3 lg:p-4">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">المفضلة</CardTitle>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+              <Bookmark className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 p-2 sm:p-3 lg:p-4 pt-0">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">-</div>
+            <p className="text-slate-400 text-xs">تم التفضيل</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Categories Display */}
-      {filteredCategories.length === 0 ? (
-        <Card className="bg-white/80 backdrop-blur-md border-0 shadow-lg">
-          <CardContent className="p-12 text-center">
-            <div className="p-6 bg-gray-50 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-              <FolderOpen className="h-12 w-12 text-gray-400" />
+      {/* Actions Bar & Filters */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="البحث في التصنيفات..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pr-10 h-10 border-slate-200 focus:ring-blue-500"
+              />
             </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">لا توجد تصنيفات</h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery ? 'لم يتم العثور على تصنيفات تطابق البحث' : 'لم يتم إنشاء أي تصنيفات بعد'}
-            </p>
+          </div>
+
+          {/* View Actions */}
+          <div className="flex items-center gap-2 justify-end">
             <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl"
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="h-10"
             >
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة تصنيف جديد
+              <RotateCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              تحديث
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className={
-          viewMode === 'grid' 
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
-            : "space-y-4"
-        }>
-          {filteredCategories.map((category: Category, index: number) => (
-            <Card
-              key={category.id}
-              className="group bg-white/90 backdrop-blur-md border-0 shadow-lg hover:shadow-2xl 
-                       transform hover:scale-105 transition-all duration-300 rounded-2xl overflow-hidden"
-              style={{
-                animationDelay: `${index * 100}ms`,
-                animation: 'fadeInUp 0.6s ease-out forwards'
-              }}
-            >
-              <CardContent className="p-6">
-                <div className={`flex ${viewMode === 'list' ? 'flex-row items-center justify-between' : 'flex-col'} gap-4`}>
-                  <div className={`flex items-center gap-4 ${viewMode === 'grid' ? 'flex-col text-center' : ''}`}>
-                    <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl">
+            <div className="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex items-center">
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className={`h-8 px-2 ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className={`h-8 px-2 ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile View - Cards Stack */}
+      <div className="md:hidden space-y-4">
+        {isLoading ? (
+          <div className="text-center py-8 text-slate-500">جاري التحميل...</div>
+        ) : paginatedCategories.map((category: Category) => (
+          <div key={category.id} className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-100 rounded-xl">
+                <FolderOpen className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-900 dark:text-white truncate">{category.name}</h3>
+                <div className="text-xs text-slate-400 font-mono mt-1">ID: {category.id.slice(0, 8)}...</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+              <Button size="sm" variant="ghost" className="flex-1 text-blue-600 bg-blue-50" onClick={() => handleEditCategory(category)}>
+                <Edit className="w-4 h-4 mr-2" /> تعديل
+              </Button>
+              <Button size="sm" variant="ghost" className="flex-1 text-red-600 bg-red-50" onClick={() => handleDeleteCategory(category)}>
+                <Trash2 className="w-4 h-4 mr-2" /> حذف
+              </Button>
+            </div>
+          </div>
+        ))}
+        {!isLoading && paginatedCategories.length === 0 && (
+          <div className="text-center py-8 text-slate-500">لا توجد نتائج</div>
+        )}
+      </div>
+
+      {/* Desktop View - Grid vs Table */}
+      <div className="hidden md:block pb-20">
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {paginatedCategories.map((category: Category, index: number) => (
+              <Card
+                key={category.id}
+                className="group hover:scale-[1.02] transition-all duration-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg rounded-xl bg-white dark:bg-slate-800 overflow-hidden"
+              >
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center gap-4">
+                    <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-200 dark:shadow-none">
                       <FolderOpen className="h-8 w-8 text-white" />
                     </div>
-                    <div className={viewMode === 'grid' ? 'text-center' : ''}>
-                      <h3 className="text-lg font-bold text-gray-800 mb-1">{category.name}</h3>
-                      <p className="text-sm text-gray-500 font-mono">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{category.name}</h3>
+                      <p className="text-xs text-slate-400 font-mono">
                         ID: {category.id.slice(0, 8)}...
                       </p>
                     </div>
+
+                    <div className="flex items-center gap-2 mt-2 w-full pt-4 border-t border-slate-100 dark:border-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCategory(category)}
+                        className="flex-1 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        تعديل
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category)}
+                        className="flex-1 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        حذف
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className={`flex gap-2 ${viewMode === 'grid' ? 'justify-center w-full' : ''}`}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditCategory(category)}
-                      className="group-hover:bg-blue-50 group-hover:border-blue-200 group-hover:text-blue-600 
-                               transition-all duration-200 rounded-xl"
-                    >
-                      <Edit className="h-4 w-4" />
-                      {viewMode === 'list' && <span className="mr-2">تعديل</span>}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteCategory(category)}
-                      className="group-hover:bg-red-50 group-hover:border-red-200 group-hover:text-red-600 
-                               transition-all duration-200 rounded-xl"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {viewMode === 'list' && <span className="mr-2">حذف</span>}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <DataTable
+              data={paginatedCategories}
+              columns={columns}
+              loading={isLoading}
+              searchPlaceholder="" // Search handled externally
+              hideSearch={true}
+              pagination={{
+                page: currentPage,
+                pageSize: itemsPerPage,
+                total: filteredCategories.length,
+              }}
+              onPageChange={(newPage: number) => setCurrentPage(newPage)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls - Simple for Grid */}
+      {totalPages > 1 && viewMode === "grid" && (
+        <div className="flex items-center justify-center gap-2 mt-8 pb-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="bg-white hover:bg-slate-50"
+          >
+            السابق
+          </Button>
+          <span className="text-sm text-slate-600 mx-2">
+            صفحة {currentPage} من {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="bg-white hover:bg-slate-50"
+          >
+            التالي
+          </Button>
         </div>
       )}
 
@@ -326,7 +480,7 @@ export default function Categories() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600">حذف التصنيف</AlertDialogTitle>
             <AlertDialogDescription>
-              هل أنت متأكد من حذف التصنيف "{selectedCategory?.name}"؟ 
+              هل أنت متأكد من حذف التصنيف "{selectedCategory?.name}"؟
               هذا الإجراء لا يمكن التراجع عنه.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -341,19 +495,6 @@ export default function Categories() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

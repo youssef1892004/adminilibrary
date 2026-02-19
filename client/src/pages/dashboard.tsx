@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Users, 
-  BookOpen, 
-  User, 
+import { Badge } from "@/components/ui/badge";
+import {
+  Users,
+  BookOpen,
+  User,
   FolderOpen,
   FileText,
   Star,
@@ -114,7 +115,7 @@ export default function Dashboard() {
       description: "أضف كتاب جديد للمكتبة"
     },
     {
-      label: "إضافة مؤلف جديد", 
+      label: "إضافة مؤلف جديد",
       icon: User,
       href: "/authors",
       gradient: "from-purple-500 to-purple-600",
@@ -123,7 +124,7 @@ export default function Dashboard() {
     {
       label: "إضافة تصنيف جديد",
       icon: FolderOpen,
-      href: "/categories", 
+      href: "/categories",
       gradient: "from-amber-500 to-amber-600",
       description: "أنشئ تصنيف جديد"
     },
@@ -151,42 +152,52 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-6 space-y-6" dir="rtl">
-
-
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 rounded-3xl p-8 mb-8 border border-slate-200/50 shadow-xl">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <BarChart3 className="w-10 h-10 text-white" />
+    <div className="flex-1 overflow-auto p-4 md:p-6 space-y-6 md:space-y-8" dir="rtl">
+      {/* Hero Section - Refined */}
+      <div className="relative overflow-hidden rounded-3xl bg-sidebar p-5 md:p-8 shadow-2xl border border-sidebar-border/50">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-right space-y-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">مرحباً بك في لوحة التحكم</h1>
+            <p className="text-sidebar-foreground/70 text-lg max-w-xl">
+              نظرة عامة على أداء المكتبة، الإحصائيات الحالية، والنشاطات الأخيرة.
+            </p>
           </div>
-          <h1 className="text-4xl font-bold text-gradient mb-3">مرحباً بك في لوحة التحكم</h1>
-          <p className="text-slate-600 text-lg">نظرة شاملة على إحصائيات المكتبة الإلكترونية</p>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center min-w-[100px]">
+              <span className="block text-2xl font-bold text-white">{stats?.totalBooks || 0}</span>
+              <span className="text-xs text-sidebar-foreground/60">كتاب</span>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center min-w-[100px]">
+              <span className="block text-2xl font-bold text-white">{stats?.totalUsers || 0}</span>
+              <span className="text-xs text-sidebar-foreground/60">مستخدم</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Primary Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Primary Stats - Clean & Professional */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {primaryStats.map((stat, index) => (
           <Link key={index} href={stat.link}>
-            <Card className={`card-professional stat-card cursor-pointer rounded-2xl overflow-hidden border-0 animate-slide-in-up animate-delay-${index * 100}`}>
+            <Card className="group cursor-pointer border border-slate-200 dark:border-sidebar-border bg-white dark:bg-sidebar-accent/10 hover:shadow-lg transition-all duration-300 rounded-2xl overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-transparent via-sidebar-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-600 mb-2">{stat.label}</p>
-                    <p className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</p>
-                    <p className="text-xs text-slate-500">{stat.description}</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${index === 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                    index === 1 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                      index === 2 ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' :
+                        'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                    }`}>
+                    <stat.icon className="w-6 h-6" />
                   </div>
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span className="text-xs font-medium text-emerald-600 flex items-center">
-                    <TrendingUp className="w-3 h-3 mr-1" />
+                  <Badge variant="outline" className="border-border/50 text-muted-foreground font-normal">
                     {stat.trend}
-                  </span>
-                  <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                  </Badge>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-sidebar-primary transition-colors">{stat.value}</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -194,124 +205,69 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {secondaryStats.map((stat, index) => (
-          <Card key={index} className={`card-professional rounded-xl border-0 animate-slide-in-up animate-delay-${(index + 4) * 100}`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-2">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
-                  <p className="text-xs text-slate-500">{stat.description}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Quick Actions - List Style */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">الإجراءات السريعة</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {quickActions.map((action, index) => (
+              <Link key={index} href={action.href}>
+                <div className="group flex items-center p-4 bg-white dark:bg-sidebar-accent/10 border border-slate-200 dark:border-sidebar-border rounded-xl cursor-pointer hover:border-sidebar-primary/50 transition-all duration-200 hover:shadow-md">
+                  <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 group-hover:bg-sidebar-primary group-hover:text-white transition-colors">
+                    <action.icon className="w-5 h-5" />
+                  </div>
+                  <div className="mr-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-sidebar-primary transition-colors">{action.label}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{action.description}</p>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 mr-auto text-slate-300 group-hover:text-sidebar-primary transition-colors" />
                 </div>
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
-                  <stat.icon className="w-5 h-5 text-white" />
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* System Status - Minimal */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">حالة النظام</h2>
+          <Card className="border-0 shadow-none bg-transparent">
+            <CardContent className="p-0 space-y-3">
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-sidebar-accent/10 border border-slate-200 dark:border-sidebar-border rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">الخادوم</span>
                 </div>
+                <span className="text-xs font-mono text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md">Online</span>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <span className="text-xs font-medium text-emerald-600">
-                  {stat.change} هذا الشهر
-                </span>
+
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-sidebar-accent/10 border border-slate-200 dark:border-sidebar-border rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">قاعدة البيانات</span>
+                </div>
+                <span className="text-xs font-mono text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">Connected</span>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-3 text-gradient">الإجراءات السريعة</h2>
-          <p className="text-slate-600">ابدأ بإضافة محتوى جديد أو إدارة البيانات الموجودة</p>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
+            <div className="relative z-10">
+              <h3 className="font-bold flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                نصيحة اليوم
+              </h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                قم بمراجعة تقييمات الكتب بشكل دوري لمعرفة اتجاهات القراء وتحسين المحتوى.
+              </p>
+            </div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickActions.map((action, index) => (
-            <Link key={index} href={action.href}>
-              <Card className={`card-professional cursor-pointer rounded-2xl border-0 overflow-hidden group animate-slide-in-up animate-delay-${(index + 8) * 100}`}>
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <div className={`w-16 h-16 bg-gradient-to-br ${action.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <action.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="font-bold text-slate-900 mb-2">{action.label}</h3>
-                    <p className="text-sm text-slate-600">{action.description}</p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-center">
-                    <Button className="btn-gradient text-white px-6 py-2 rounded-xl text-sm font-medium">
-                      ابدأ الآن
-                      <Plus className="w-4 h-4 mr-2" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* System Status & Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="card-professional border-0 rounded-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Activity className="w-4 h-4 text-white" />
-              </div>
-              حالة النظام
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-emerald-700">GraphQL API</span>
-              </div>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">متصل</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-blue-700">خدمة التطبيق</span>
-              </div>
-              <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-full">يعمل</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-purple-700">آخر تحديث</span>
-              </div>
-              <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded-full">الآن</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-professional border-0 rounded-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              نصائح سريعة
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-              <h4 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                تحسين الأداء
-              </h4>
-              <p className="text-sm text-amber-700">استخدم فلاتر التصنيف لتسهيل البحث في الكتب</p>
-            </div>
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                إدارة المحتوى
-              </h4>
-              <p className="text-sm text-blue-700">أضف وصف مفصل للكتب لتحسين تجربة المستخدمين</p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

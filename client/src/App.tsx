@@ -110,9 +110,9 @@ function Router() {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <div className="author-layout bg-gradient-to-br from-purple-50 via-blue-50 to-teal-50 flex flex-col">
+          <div className="author-layout bg-slate-50 min-h-screen flex flex-col" dir="rtl">
             <AuthorNavbar onLogout={handleLogout} />
-            <div className="author-content">
+            <div className="author-content flex-1">
               <Switch>
                 <Route path="/" component={() => <AuthorDashboard />} />
                 <Route path="/author-dashboard" component={() => <AuthorDashboard />} />
@@ -131,32 +131,28 @@ function Router() {
 
   // الداشبورد العادي للمدراء والمستخدمين العاديين
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden relative">
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {/* Mobile Header */}
-          <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-40">
-            <h1 className="text-xl font-bold text-gradient">Ilibrary</h1>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">{user?.displayName}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleLogout}
-                className="text-red-600 border-red-300 hover:bg-red-50"
-              >
-                خروج
-              </Button>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
-          </div>
+    <div className="flex h-screen bg-slate-50 overflow-hidden relative" dir="rtl">
 
+      {/* Main Content (First in DOM for RTL + visual Right) */}
+      <main className="flex-1 h-full overflow-hidden flex flex-col min-w-0">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 z-40">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
+          <h1 className="text-xl font-bold text-gradient">Muejam Library</h1>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 hidden sm:inline-block">{user?.displayName}</span>
+          </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-4 md:p-6 lg:p-8">
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/users" component={Users} />
@@ -171,13 +167,13 @@ function Router() {
         </div>
       </main>
 
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      {/* Desktop Sidebar (Last in DOM for RTL = Left Side) */}
+      <div className="hidden lg:block w-72 flex-shrink-0 h-full">
         <Sidebar user={user} onLogout={handleLogout} />
       </div>
 
       {/* Floating Action Button for Feedback */}
-      <div className="fixed bottom-6 left-6 z-50">
+      <div className="fixed bottom-6 right-6 z-40">
         <Button
           onClick={() => setFeedbackOpen(true)}
           className="rounded-full w-14 h-14 shadow-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-transform hover:scale-110"
@@ -196,10 +192,10 @@ function Router() {
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw]">
+          <div className="absolute left-0 top-0 h-full shadow-2xl animate-slide-in-right">
             <Sidebar user={user} onLogout={handleLogout} onClose={() => setMobileMenuOpen(false)} />
           </div>
         </div>

@@ -27,6 +27,7 @@ export default function Users() {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: users = [], isLoading, refetch } = useQuery<User[]>({
@@ -210,9 +211,9 @@ export default function Users() {
   ];
 
   const filters = (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-3 w-full md:w-auto">
       <Select value={roleFilter} onValueChange={setRoleFilter}>
-        <SelectTrigger className="w-36 bg-white/80 dark:bg-slate-700/80 backdrop-blur border-slate-200 dark:border-slate-600">
+        <SelectTrigger className="w-full md:w-36 bg-white/80 dark:bg-slate-700/80 backdrop-blur border-slate-200 dark:border-slate-600">
           <SelectValue placeholder="All Roles" />
         </SelectTrigger>
         <SelectContent>
@@ -225,7 +226,7 @@ export default function Users() {
       </Select>
 
       <Select value={statusFilter} onValueChange={setStatusFilter}>
-        <SelectTrigger className="w-36 bg-white/80 dark:bg-slate-700/80 backdrop-blur border-slate-200 dark:border-slate-600">
+        <SelectTrigger className="w-full md:w-36 bg-white/80 dark:bg-slate-700/80 backdrop-blur border-slate-200 dark:border-slate-600">
           <SelectValue placeholder="All Status" />
         </SelectTrigger>
         <SelectContent>
@@ -242,25 +243,49 @@ export default function Users() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30 dark:from-slate-900 dark:to-slate-800">
       {/* Professional Compact Container */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-        {/* Compact Header */}
-        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <UsersIcon className="w-4 h-4 text-white" />
+      {/* Professional Compact Container */}
+      <div className="flex-1 flex flex-col space-y-4">
+        {/* Enhanced Header - Matches Books/Dashboard */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-sidebar via-sidebar/95 to-sidebar-primary/90 p-6 text-white shadow-lg border border-sidebar-border">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center shadow-inner">
+                <UsersIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  User Management
-                </h1>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  {filteredUsers.length} of {users.length} users
+                <h1 className="text-2xl font-bold text-white tracking-tight">إدارة المستخدمين</h1>
+                <p className="text-sidebar-foreground/80 text-sm">
+                  {filteredUsers.length} مستخدم مسجل
                 </p>
               </div>
             </div>
 
-            <div className="flex-1 px-8">
+            {/* View Toggle */}
+            <div className="flex bg-white/10 backdrop-blur-sm p-1 rounded-lg border border-white/10">
+              <button
+                onClick={() => setViewMode("table")}
+                className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-white/70 hover:text-white'}`}
+                title="List View"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-white/70 hover:text-white'}`}
+                title="Grid View"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 flex flex-col">
+          {/* Actions Bar */}
+          <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+
+            <div className="flex-1 md:px-8">
               <UserSearch
                 users={users}
                 onSearch={setSearchQuery}
@@ -270,7 +295,7 @@ export default function Users() {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -279,36 +304,131 @@ export default function Users() {
                   toast({ title: "Refreshed", description: "User list updated" });
                 }}
                 disabled={isLoading}
-                className="h-7 text-xs px-2"
+                className="h-9 text-xs px-3"
               >
-                <RotateCcw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                <RotateCcw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
               <Button
                 size="sm"
                 onClick={() => setShowAddModal(true)}
-                className="h-7 bg-blue-600 hover:bg-blue-700 text-xs px-2"
+                className="h-9 bg-blue-600 hover:bg-blue-700 text-xs px-3"
               >
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
                 Add User
               </Button>
             </div>
           </div>
+
+          {/* Filters Bar */}
+          <div className="px-5 py-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            {filters}
+          </div>
         </div>
 
-        {/* Data Table Section */}
-        <div className="p-0">
-          <DataTable
-            data={filteredUsers}
-            columns={columns}
-            loading={isLoading}
-            searchPlaceholder="Search users..."
-            filters={filters}
-            selectedRows={selectedRows}
-            onSelectionChange={setSelectedRows}
-            getRowId={(user) => user.id}
-            hideSearch={true}
-          />
+        {/* Mobile View - Cards */}
+        <div className="md:hidden space-y-4">
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10 ring-2 ring-blue-50 dark:ring-blue-900/20">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm">
+                      {user.displayName.split(" ").map(n => n[0]).join("").toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{user.displayName}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+                  </div>
+                </div>
+                <Badge className={`shadow-none ${getStatusColor(user)}`}>
+                  {getStatusText(user)}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                  <span className="text-xs text-slate-400 block mb-1">Role</span>
+                  <Badge variant="outline" className={`font-normal ${getRoleColor(user.defaultRole)}`}>
+                    {user.defaultRole}
+                  </Badge>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                  <span className="text-xs text-slate-400 block mb-1">Created</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                  onClick={() => handleEditUser(user)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  onClick={() => handleDeleteUser(user)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View - Grid vs Table */}
+        <div className="hidden md:block p-0 pb-20">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredUsers.map((user) => (
+                <div key={user.id} className="group relative bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all hover:border-blue-200 dark:hover:border-blue-900">
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 bg-blue-50" onClick={() => handleEditUser(user)}><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 bg-red-50" onClick={() => handleDeleteUser(user)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                  <div className="flex flex-col items-center text-center">
+                    <Avatar className="w-16 h-16 ring-4 ring-slate-50 dark:ring-slate-800 mb-3">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xl">
+                        {user.displayName.split(" ").map(n => n[0]).join("").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-lg">{user.displayName}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{user.email}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="secondary" className={`${getRoleColor(user.defaultRole)}`}>{user.defaultRole}</Badge>
+                      <Badge variant="outline" className={`${getStatusColor(user)}`}>{getStatusText(user)}</Badge>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between text-xs text-slate-400">
+                    <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                    <span>{user.lastSeen ? 'Seen recently' : 'Never seen'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              data={filteredUsers}
+              columns={columns}
+              loading={isLoading}
+              searchPlaceholder="Search users..."
+              filters={null}
+              selectedRows={selectedRows}
+              onSelectionChange={setSelectedRows}
+              getRowId={(user) => user.id}
+              hideSearch={true}
+            />
+          )}
         </div>
       </div>
 

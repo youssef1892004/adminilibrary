@@ -11,10 +11,10 @@ export default function Landing() {
           <div className="flex items-center space-x-3">
             <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Ilibrary
+              Muejam Library
             </h1>
           </div>
-          <Button 
+          <Button
             onClick={() => window.location.href = '/api/login'}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
           >
@@ -28,14 +28,14 @@ export default function Landing() {
       <section className="py-20 px-6">
         <div className="container mx-auto text-center">
           <h2 className="text-5xl font-bold text-gray-800 dark:text-white mb-6">
-            مرحباً بك في 
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Ilibrary</span>
+            مرحباً بك في
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Muejam Library</span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
             نظام إدارة المكتبة الرقمية الشامل - إدارة الكتب والمؤلفين والفئات والمستخدمين بكل سهولة
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
+            <Button
               size="lg"
               onClick={() => window.location.href = '/api/login'}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3"
@@ -114,11 +114,11 @@ export default function Landing() {
                 ابدأ رحلتك معنا اليوم
               </CardTitle>
               <CardDescription className="text-blue-100 text-lg">
-                انضم إلى نظام Ilibrary واستمتع بإدارة مكتبتك الرقمية بكل احترافية
+                انضم إلى نظام Muejam Library واستمتع بإدارة مكتبتك الرقمية بكل احترافية
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
+              <Button
                 size="lg"
                 onClick={() => window.location.href = '/api/login'}
                 className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3"
@@ -136,10 +136,10 @@ export default function Landing() {
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <BookOpen className="h-6 w-6 text-blue-400" />
-            <span className="text-xl font-bold">Ilibrary</span>
+            <span className="text-xl font-bold">Muejam Library</span>
           </div>
           <p className="text-gray-400">
-            © 2025 Ilibrary. جميع الحقوق محفوظة.
+            © 2025 Muejam Library. جميع الحقوق محفوظة.
           </p>
         </div>
       </footer>

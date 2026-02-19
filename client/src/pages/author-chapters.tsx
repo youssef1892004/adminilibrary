@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, PlusCircle, Edit, Trash2, ArrowRight, BookOpen, Search } from "lucide-react";
+import { FileText, PlusCircle, Edit, Trash2, ArrowRight, BookOpen, Search, Filter } from "lucide-react";
 import { libraryApi } from "@/lib/api";
 import AuthorAddChapterModal from "@/components/modals/author-add-chapter-modal";
 import AuthorEditChapterModal from "@/components/modals/author-edit-chapter-modal";
@@ -39,11 +39,8 @@ export default function AuthorChapters() {
 
   // Clear cache when component mounts to ensure fresh data
   useEffect(() => {
-    console.log("AuthorChapters mounted - clearing cache for fresh data");
-    queryClient.removeQueries({ queryKey: ["/api/auth/author-profile"] });
-    queryClient.removeQueries({ queryKey: ["/api/books"] });
-    queryClient.removeQueries({ queryKey: ["/api/chapters"] });
-    queryClient.removeQueries({ queryKey: ["/api/session"] });
+    console.log("AuthorChapters mounted - ensuring fresh data");
+    // queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
   }, []);
 
   // Get bookId from URL params
@@ -57,18 +54,23 @@ export default function AuthorChapters() {
 
   // Fetch books
   const { data: books = [] } = useQuery({
-    queryKey: ["/api/books"],
-    queryFn: () => libraryApi.getBooks(),
+    queryKey: ["/api/author/books"],
+    queryFn: async () => {
+      const res = await fetch("/api/author/books");
+      if (!res.ok) throw new Error("Failed to fetch books");
+      return res.json();
+    },
   });
 
   // Fetch chapters with pagination
   const { data, isLoading } = useQuery<{ chapters: any[], total: number }>({
-    queryKey: ["/api/chapters", page, limit, searchTerm],
+    queryKey: ["/api/chapters", page, limit, searchTerm, selectedBookId],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        search: searchTerm
+        search: searchTerm,
+        ...(selectedBookId ? { bookId: selectedBookId } : {})
       });
       const res = await fetch(`/api/chapters?${params}`);
       if (!res.ok) throw new Error('Failed to fetch chapters');
@@ -79,7 +81,9 @@ export default function AuthorChapters() {
   const chapters = data?.chapters || [];
   const totalChapters = data?.total || 0;
   const totalPages = Math.ceil(totalChapters / limit);
-  const filteredChapters = chapters; // Server already filtered
+  // Optional: Client-side filtering if API doesn't fully support all filters mixed with search, 
+  // but here we rely on API. 
+  const filteredChapters = chapters;
 
   // Delete chapter mutation  
   const deleteMutation = useMutation({
@@ -156,13 +160,18 @@ export default function AuthorChapters() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-teal-50 p-6">
+      <div className="p-4 sm:p-6 lg:p-8" dir="rtl">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-12 bg-gray-200 rounded-lg"></div>
+            <div className="h-48 bg-gray-200 rounded-3xl"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
               ))}
             </div>
           </div>
@@ -172,222 +181,270 @@ export default function AuthorChapters() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 space-y-6 lg:space-y-8 min-h-screen bg-slate-50" dir="rtl">
 
-        {/* Main Dashboard Box - Enhanced */}
-        <Card className="border-0 shadow-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 text-white overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-          <CardContent className="relative z-10 p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
-                    <FileText className="h-12 w-12 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2">إدارة الفصول</h2>
-                    <p className="text-emerald-100 text-lg">جميع فصولك</p>
-                  </div>
-                </div>
+      {/* Enhanced Header Section */}
+      <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-sidebar via-sidebar/95 to-sidebar-primary/90 p-8 md:p-10 text-white shadow-xl border border-sidebar-border">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl translate-y-24 -translate-x-24"></div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{totalChapters}</div>
-                    <div className="text-emerald-100 text-sm">إجمالي الفصول</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{filteredChapters.length}</div>
-                    <div className="text-emerald-100 text-sm">الفصول المعروضة</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{books.length}</div>
-                    <div className="text-emerald-100 text-sm">عدد الكتب</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">الكل</div>
-                    <div className="text-emerald-100 text-sm">الكتاب المحدد</div>
-                  </div>
-                </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                <FileText className="h-6 w-6 text-blue-200" />
               </div>
+              <span className="text-blue-200 font-medium">إدارة المحتوى</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">إدارة الفصول</h1>
+            <p className="text-blue-100/80 text-lg max-w-2xl">
+              إدارة شاملة لفصول كتبك، كتابة وتعديل المحتوى
+            </p>
+          </div>
 
-              <div className="flex flex-col gap-3 w-full md:w-auto">
+          <Button
+            onClick={() => setIsAddChapterOpen(true)}
+            className="bg-white text-sidebar-primary hover:bg-blue-50 font-medium shadow-sm hover:shadow-md transition-all px-6 py-6 h-auto rounded-xl flex items-center gap-2"
+          >
+            <PlusCircle className="h-5 w-5" />
+            <span>إضافة فصل جديد</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-all border-t-4 border-t-blue-500">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">إجمالي الفصول</p>
+                <h3 className="text-2xl font-bold text-slate-900">{totalChapters}</h3>
+              </div>
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-all border-t-4 border-t-emerald-500">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">الفصول المعروضة</p>
+                <h3 className="text-2xl font-bold text-slate-900">{filteredChapters.length}</h3>
+              </div>
+              <div className="p-2 bg-emerald-50 rounded-lg">
+                <BookOpen className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-all border-t-4 border-t-purple-500">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">عدد الكتب</p>
+                <h3 className="text-2xl font-bold text-slate-900">{books.length}</h3>
+              </div>
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <BookOpen className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search Box */}
+      <Card className="border-0 shadow-sm bg-white">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 w-full sm:w-auto relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <Input
+                placeholder="ابحث في الفصول..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1); // Reset page on search
+                }}
+                className="pr-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+              />
+            </div>
+
+            {selectedBookId && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="px-3 py-1.5 text-sm gap-2">
+                  تصفية حسب كتاب محدد
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 ml-1 rounded-full hover:bg-slate-200"
+                    onClick={() => {
+                      setSelectedBookId(null);
+                      // Update URL to remove bookId without refresh
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete('bookId');
+                      window.history.pushState({}, '', url);
+                    }}
+                  >
+                    <span className="sr-only">إزالة التصفية</span>
+                    <span className="text-xs">×</span>
+                  </Button>
+                </Badge>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Chapters List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-lg font-bold text-slate-800">
+            {filteredChapters.length > 0
+              ? `قائمة الفصول (${filteredChapters.length})`
+              : 'القائمة فارغة'
+            }
+          </h3>
+          <div className="text-sm text-slate-500">
+            {searchTerm && `نتائج البحث: "${searchTerm}"`}
+          </div>
+        </div>
+
+        {filteredChapters.length === 0 ? (
+          <Card className="border-0 shadow-sm bg-white">
+            <CardContent className="p-12 text-center">
+              <div className="p-4 bg-slate-50 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-4">
+                <FileText className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-600 mb-2">لا توجد فصول</h3>
+              <p className="text-slate-500 mb-6"> {searchTerm ? "عذرا، لم يتم العثور على نتائج" : "ابدأ بإضافة فصل جديد لمحتواك"}</p>
+              {!searchTerm && (
                 <Button
                   onClick={() => setIsAddChapterOpen(true)}
-                  className="bg-white text-emerald-600 hover:bg-emerald-50 shadow-lg hover:shadow-xl rounded-xl px-6 py-3 font-medium transition-all duration-200"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <PlusCircle className="ml-2 h-5 w-5" />
                   إضافة فصل جديد
                 </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Search Box */}
-        <Card className="border-0 shadow-xl bg-gradient-to-r from-white to-gray-50">
-          <CardContent className="p-6">
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-emerald-700 flex items-center gap-2">
-                <Search className="h-4 w-4" />
-                البحث السريع
-              </label>
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-emerald-400 h-4 w-4" />
-                <Input
-                  placeholder="ابحث في الفصول..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1); // Reset page on search
-                  }}
-                  className="pr-10 bg-white border-emerald-200 shadow-sm hover:shadow-md transition-shadow focus:border-emerald-400"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Chapters List */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-800">
-              {filteredChapters.length > 0
-                ? `${filteredChapters.length} فصل`
-                : 'لا توجد فصول'
-              }
-            </h3>
-            <div className="text-sm text-gray-500">
-              {searchTerm && `نتائج البحث: "${searchTerm}"`}
-            </div>
-          </div>
-
-          {filteredChapters.length === 0 ? (
-            <Card className="border-0 shadow-lg bg-white">
-              <CardContent className="p-12 text-center">
-                <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-500 mb-2">لا توجد فصول</h3>
-                <p className="text-gray-400 mb-6"> {searchTerm ? "عذرا، لم يتم العثور على نتائج" : "ابدأ بإضافة فصل جديد"}</p>
-                {!searchTerm && (
-                  <Button
-                    onClick={() => setIsAddChapterOpen(true)}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    <PlusCircle className="ml-2 h-5 w-5" />
-                    إضافة فصل جديد
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {filteredChapters
-                .map((chapter: any) => {
-                  const book = books.find((b: any) => b.id === chapter.book__id);
-                  return (
-                    <Card key={chapter.id} className="border-0 shadow-lg bg-white hover:shadow-xl transition-all duration-200">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row md:items-center gap-4">
-                          <div className="flex-1 space-y-3">
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                                الفصل {chapter.chapter_num || 'غير محدد'}
-                              </Badge>
-                              {book && (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  {book.title}
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div>
-                              <h3 className="font-bold text-lg text-gray-800 mb-1">
-                                {chapter.title || `الفصل ${chapter.chapter_num}`}
-                              </h3>
-                              <p className="text-gray-600 text-sm line-clamp-2">
-                                {Array.isArray(chapter.content)
-                                  ? 'محتوى متعدد الفقرات'
-                                  : typeof chapter.content === 'string'
-                                    ? chapter.content.substring(0, 150) + '...'
-                                    : 'لا يوجد محتوى'
-                                }
-                              </p>
-                              <span className="text-gray-600 text-sm">الكلمات: {
-                                Array.isArray(chapter.content)
-                                  ? (chapter.content as any[]).join(' ').split(' ').length
-                                  : typeof chapter.content === 'string'
-                                    ? (chapter.content as string).split(' ').length
-                                    : 0
-                              }</span>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span>تاريخ الإنشاء: {new Date(chapter.Create_at).toLocaleDateString('ar-EG')}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditChapter(chapter)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                            >
-                              <Edit className="ml-1 h-4 w-4" />
-                              تعديل
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteChapter(chapter)}
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredChapters
+              .map((chapter: any) => {
+                const book = books.find((b: any) => b.id === chapter.book__id);
+                return (
+                  <Card key={chapter.id} className="group border-0 shadow-sm bg-white hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        {/* Chapter Icon/Number */}
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-lg border border-blue-100">
+                            {chapter.chapter_num || '#'}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-            </div>
-          )}
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="mt-8 flex justify-center dir-ltr">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">
+                              {chapter.title || `الفصل ${chapter.chapter_num}`}
+                            </h3>
+                            {book && (
+                              <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 font-normal text-xs">
+                                <BookOpen className="w-3 h-3 ml-1" />
+                                {book.title}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
+                            {Array.isArray(chapter.content)
+                              ? 'محتوى متعدد الفقرات'
+                              : typeof chapter.content === 'string'
+                                ? chapter.content.substring(0, 150) + '...'
+                                : 'لا يوجد محتوى'
+                            }
+                          </p>
+
+                          <div className="flex items-center gap-4 text-xs text-slate-400 pt-1">
+                            <span>تاريخ الإنشاء: {new Date(chapter.Create_at).toLocaleDateString('ar-EG')}</span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                            <span>
+                              {Array.isArray(chapter.content)
+                                ? (chapter.content as any[]).join(' ').split(' ').length
+                                : typeof chapter.content === 'string'
+                                  ? (chapter.content as string).split(' ').length
+                                  : 0
+                              } كلمة
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start md:self-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditChapter(chapter)}
+                            className="text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteChapter(chapter)}
+                            className="text-slate-500 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center dir-ltr">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i + 1}>
+                    <PaginationLink
+                      isActive={page === i + 1}
+                      onClick={() => setPage(i + 1)}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
                   </PaginationItem>
+                ))}
 
-                  {[...Array(totalPages)].map((_, i) => (
-                    <PaginationItem key={i + 1}>
-                      <PaginationLink
-                        isActive={page === i + 1}
-                        onClick={() => setPage(i + 1)}
-                        className="cursor-pointer"
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </div>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
 
       <ConfirmModal
