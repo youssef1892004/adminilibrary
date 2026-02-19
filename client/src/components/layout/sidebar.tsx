@@ -1,17 +1,18 @@
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Book, 
-  Tags, 
-  UserCog, 
-  ArrowLeftRight, 
+import {
+  LayoutDashboard,
+  Users,
+  Book,
+  Tags,
+  UserCog,
+  ArrowLeftRight,
   Settings,
   BookOpen,
   Sparkles,
   Library,
   FileText,
-  Heart
+  Heart,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "التصنيفات", href: "/categories", icon: Tags },
   { name: "المؤلفين", href: "/authors", icon: UserCog },
   { name: "إدارة المفضلة", href: "/favorites", icon: Heart },
+  { name: "المراجعات", href: "/reviews", icon: MessageSquare },
 ];
 
 interface SidebarProps {
@@ -73,8 +75,8 @@ export default function Sidebar({ onClose, user, onLogout }: SidebarProps) {
                 )}
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center ml-3 transition-all duration-200 relative z-10",
-                  isActive 
-                    ? "bg-white/20" 
+                  isActive
+                    ? "bg-white/20"
                     : "bg-slate-100/80 group-hover:bg-slate-200"
                 )}>
                   <item.icon className={cn(

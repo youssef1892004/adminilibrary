@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Heart, BookOpen, User, Calendar, Trash2 } from "lucide-react";
+import { Search, Heart, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Favorite } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function FavoritesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,29 +18,29 @@ export default function FavoritesPage() {
     queryKey: ["/api/favorites"],
   });
 
-  const deleteFavoriteMutation = useMutation({
-    mutationFn: (favoriteId: string) => 
-      apiRequest(`/api/favorites/${favoriteId}`, "DELETE"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-      toast({
-        title: "تم الحذف بنجاح",
-        description: "تم حذف الكتاب من المفضلة بنجاح.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "خطأ في الحذف",
-        description: "حدث خطأ أثناء حذف الكتاب من المفضلة.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Group favorites by book
+  const groupedFavorites = favorites.reduce((acc: any, favorite: any) => {
+    if (!favorite.book) return acc;
 
-  const filteredFavorites = favorites.filter((favorite: any) =>
-    favorite.book?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    favorite.user?.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    favorite.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!acc[favorite.book.id]) {
+      acc[favorite.book.id] = {
+        book: favorite.book,
+        users: [],
+        count: 0
+      };
+    }
+
+    if (favorite.user) {
+      acc[favorite.book.id].users.push(favorite.user);
+    }
+    acc[favorite.book.id].count++;
+
+    return acc;
+  }, {});
+
+  const favoritesList = Object.values(groupedFavorites).filter((item: any) =>
+    item.book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.book.author_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -60,12 +60,16 @@ export default function FavoritesPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">إدارة المفضلة</h1>
-          <p className="text-gray-600 mt-1">عرض وإدارة الكتب المفضلة للمستخدمين</p>
+          <p className="text-gray-600 mt-1">عرض الكتب المفضلة وإحصائيات المستخدمين</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="text-sm">
-            <Heart className="w-4 h-4 mr-1" />
-            {favorites.length} مفضلة
+          <Badge variant="secondary" className="text-sm px-3 py-1">
+            <Heart className="w-4 h-4 mr-1 text-red-500" />
+            {favoritesList.length} كتاب
+          </Badge>
+          <Badge variant="secondary" className="text-sm px-3 py-1">
+            <Users className="w-4 h-4 mr-1 text-blue-500" />
+            {favorites.length} إجمالي المفضلة
           </Badge>
         </div>
       </div>
@@ -74,19 +78,19 @@ export default function FavoritesPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="البحث في المفضلة..."
+              placeholder="البحث عن كتاب أو مؤلف..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pr-10"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Favorites Grid */}
-      {filteredFavorites.length === 0 ? (
+      {favoritesList.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <Heart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -97,70 +101,76 @@ export default function FavoritesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredFavorites.map((favorite: any) => (
-            <Card key={favorite.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg line-clamp-2">
-                      {favorite.book?.title || "عنوان غير محدد"}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {favorite.book?.author_name || "مؤلف غير محدد"}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {favoritesList.map((item: any) => (
+            <Card key={item.book.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-t-4 border-t-purple-500">
+              <CardContent className="p-0">
+                <div className="flex h-32 relative bg-gray-100">
+                  {/* Book Cover */}
+                  <div className="w-24 h-32 flex-shrink-0 relative ml-4 -mb-8 mt-4 shadow-lg rounded-sm overflow-hidden">
+                    <img
+                      src={item.book.cover_URL || "/placeholder-book.jpg"}
+                      alt={item.book.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Book Details */}
+                  <div className="flex-1 p-4">
+                    <h3 className="font-bold text-lg leading-tight mb-1 text-gray-900 line-clamp-2">
+                      {item.book.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {item.book.author_name || "مؤلف غير محدد"}
                     </p>
+                    {item.book.category_name && (
+                      <Badge variant="outline" className="text-xs bg-white/50">
+                        {item.book.category_name}
+                      </Badge>
+                    )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteFavoriteMutation.mutate(favorite.id)}
-                    disabled={deleteFavoriteMutation.isPending}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {/* User Info */}
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={favorite.user?.avatarUrl} />
-                      <AvatarFallback>
-                        {favorite.user?.displayName?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {favorite.user?.displayName || "مستخدم غير محدد"}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {favorite.user?.email || "بريد غير محدد"}
-                      </p>
+
+                <div className="mt-8 px-4 pb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center text-sm text-gray-500">
+                      <BookOpen className="w-4 h-4 mr-1 ml-1" />
+                      {item.book.total_pages || 0} صفحة
+                    </div>
+                    <div className="flex items-center font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
+                      <Heart className="w-3.5 h-3.5 mr-1 ml-1 fill-current" />
+                      {item.count} معجب
                     </div>
                   </div>
 
-                  {/* Book Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <BookOpen className="h-4 w-4" />
-                      <span>{favorite.book?.total_pages || 0} صفحة</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        أُضيف في {favorite.added_at ? new Date(favorite.added_at).toLocaleDateString('ar-EG') : 'غير محدد'}
-                      </span>
+                  {/* Users Avatars */}
+                  <div className="border-t pt-3">
+                    <p className="text-xs text-gray-500 mb-2">أضيف للمفضلة بواسطة:</p>
+                    <div className="flex -space-x-2 space-x-reverse overflow-hidden py-1">
+                      <TooltipProvider>
+                        {item.users.map((user: any, index: number) => (
+                          <Tooltip key={index}>
+                            <TooltipTrigger asChild>
+                              <Avatar className="h-8 w-8 border-2 border-white ring-1 ring-gray-100 transition-transform hover:scale-110 hover:z-10">
+                                <AvatarImage src={user.avatarUrl} />
+                                <AvatarFallback className="text-[10px] bg-purple-100 text-purple-700">
+                                  {user.displayName?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{user.displayName}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </TooltipProvider>
+                      {item.count > item.users.length && (
+                        <div className="h-8 w-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                          +{item.count - item.users.length}
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Book Category */}
-                  {favorite.book?.category_name && (
-                    <Badge variant="outline" className="text-xs">
-                      {favorite.book.category_name}
-                    </Badge>
-                  )}
                 </div>
               </CardContent>
             </Card>

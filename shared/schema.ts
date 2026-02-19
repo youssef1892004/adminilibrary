@@ -127,6 +127,15 @@ export const reviews = pgTable("libaray_Review", {
   q3_answer: text("q3_answer"),
 });
 
+// Library schema - Feedback table
+export const feedbacks = pgTable("libaray_Feedback", {
+  id: uuid("id").primaryKey(),
+  user_id: uuid("user_id"),
+  message: text("message").notNull(),
+  rating: integer("rating"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const booksRelations = relations(books, ({ one, many }) => ({
   author: one(authors, {
@@ -281,6 +290,16 @@ export type UpdateChapter = z.infer<typeof updateChapterSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type UpdateReview = z.infer<typeof updateReviewSchema>;
+
+// Feedback schema
+export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({ id: true, created_at: true }).extend({
+  message: z.string().min(1, "Message is required"),
+  rating: z.number().min(1).max(5).optional(),
+  user_id: z.string().uuid().optional().nullable(),
+});
+
+export type Feedback = typeof feedbacks.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
 // Favorites schema
 export const insertFavoriteSchema = createInsertSchema(favorites).pick({

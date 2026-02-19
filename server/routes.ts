@@ -1194,12 +1194,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/favorites/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      await storage.deleteFavorite(id);
-      res.json({ success: true });
+      await storage.deleteFavorite(req.params.id);
+      res.status(204).send();
     } catch (error) {
       console.error("Error deleting favorite:", error);
-      res.status(500).json({ error: "Failed to delete favorite" });
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Reviews
+  app.get("/api/reviews", async (req, res) => {
+    try {
+      const reviews = await storage.getReviews();
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting reviews:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -15,7 +15,8 @@ import {
   UpdateCategory,
   UpdateUser,
   UpdateChapter,
-  UpsertUser
+  UpsertUser,
+  InsertFeedback
 } from "../shared/schema";
 
 export interface IStorage {
@@ -1238,7 +1239,8 @@ class GraphQLStorage implements IStorage {
 
   // Favorites methods
   async getFavorites() {
-    const query = `
+    // Fetch raw favorites and all related entities for manual joining
+    const favoritesQuery = `
       query GetFavorites {
         libaray_Favorite {
           id
@@ -1250,15 +1252,122 @@ class GraphQLStorage implements IStorage {
     `;
 
     try {
-      const data = await graphqlRequest(query);
-      return data.libaray_Favorite.map((favorite: any) => ({
-        id: favorite.id,
-        user_id: favorite.user_id,
-        book_id: favorite.book_id,
-        added_at: favorite.added_at,
-      }));
+      const [favoritesData, books, users, authors, categories] = await Promise.all([
+        graphqlRequest(favoritesQuery),
+        this.getBooks(),
+        this.getUsers(),
+        this.getAuthors(),
+        this.getCategories()
+      ]);
+
+      const favorites = favoritesData.libaray_Favorite || [];
+
+      // Create lookup maps for performance
+      const booksMap = new Map(books.map(b => [b.id, b]));
+      const usersMap = new Map(users.map(u => [u.id, u]));
+      const authorsMap = new Map(authors.map(a => [a.id, a]));
+      const categoriesMap = new Map(categories.map(c => [c.id, c]));
+
+      return favorites.map((favorite: any) => {
+        const book = booksMap.get(favorite.book_id);
+        const user = usersMap.get(favorite.user_id);
+
+        let enrichedBook = null;
+        if (book) {
+          const author = book.author_id ? authorsMap.get(book.author_id) : null;
+          const category = book.category_id ? categoriesMap.get(book.category_id) : null;
+          enrichedBook = {
+            id: book.id,
+            title: book.title,
+            cover_URL: book.cover_URL,
+            total_pages: book.total_pages,
+            category_name: category?.name,
+            author_name: author?.name
+          };
+        }
+
+        return {
+          id: favorite.id,
+          user: user ? {
+            id: user.id,
+            displayName: user.displayName,
+            email: user.email,
+            avatarUrl: user.avatarUrl
+          } : null,
+          book: enrichedBook,
+          added_at: favorite.added_at,
+        };
+      });
     } catch (error) {
       console.error("GraphQL error getting favorites:", error);
+      return [];
+    }
+  }
+
+  // Reviews methods
+  async getReviews() {
+    // Fetch raw reviews and all related entities for manual joining
+    const reviewsQuery = `
+      query GetReviews {
+        libaray_Review {
+          id
+          user_id
+          book_id
+          rating
+          q1_answer
+          q2_answer
+          q3_answer
+        }
+      }
+    `;
+
+    try {
+      const [reviewsData, books, users, authors] = await Promise.all([
+        graphqlRequest(reviewsQuery),
+        this.getBooks(),
+        this.getUsers(),
+        this.getAuthors()
+      ]);
+
+      const reviews = reviewsData.libaray_Review || [];
+
+      // Create lookup maps
+      const booksMap = new Map(books.map(b => [b.id, b]));
+      const usersMap = new Map(users.map(u => [u.id, u]));
+      const authorsMap = new Map(authors.map(a => [a.id, a]));
+
+      return reviews.map((review: any) => {
+        const book = booksMap.get(review.book_id);
+        const user = usersMap.get(review.user_id);
+
+        let enrichedBook = null;
+        if (book) {
+          const author = book.author_id ? authorsMap.get(book.author_id) : null;
+          enrichedBook = {
+            id: book.id,
+            title: book.title,
+            cover_URL: book.cover_URL,
+            author_name: author?.name
+          };
+        }
+
+        return {
+          id: review.id,
+          rating: review.rating,
+          q1_answer: review.q1_answer,
+          q2_answer: review.q2_answer,
+          q3_answer: review.q3_answer,
+          user: user ? {
+            id: user.id,
+            displayName: user.displayName,
+            email: user.email,
+            avatarUrl: user.avatarUrl
+          } : null,
+          book: enrichedBook
+        };
+      });
+    } catch (error) {
+      console.error("GraphQL error getting reviews:", error);
       return [];
     }
   }
@@ -1280,6 +1389,31 @@ class GraphQLStorage implements IStorage {
     }
   }
 
+  // Feedback methods
+  async createFeedback(feedback: InsertFeedback) {
+    const mutation = `
+      mutation InsertFeedback($message: String!, $rating: Int, $user_id: uuid) {
+        insert_libaray_Feedback_one(object: {message: $message, rating: $rating, user_id: $user_id}) {
+          id
+          message
+          rating
+          created_at
+        }
+      }
+    `;
+
+    try {
+      const data = await graphqlRequest(mutation, {
+        message: feedback.message,
+        rating: feedback.rating || null,
+        user_id: feedback.user_id || null
+      });
+      return data.insert_libaray_Feedback_one;
+    } catch (error) {
+      console.error("GraphQL error creating feedback:", error);
+      throw error;
+    }
+  }
 
 }
 
